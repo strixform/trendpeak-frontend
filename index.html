@@ -1,1 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TrendPeak</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Understand what is moving online.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand">
+        <div class="logo"></div>
+        <h1>TrendPeak</h1>
+      </div>
+      <p class="tag">See the rise. Understand the reason.</p>
+    </header>
+
+    <main>
+      <form id="searchForm" autocomplete="off">
+        <input id="q" type="text" placeholder="Search a name, keyword, or hashtag">
+        <button type="submit">Search</button>
+      </form>
+
+      <div id="hint">Try: Asake, #FuelPrice, iPhone 16, Afcon</div>
+
+      <section id="result" class="hide">
+        <h2 id="title"></h2>
+        <div class="meta">
+          <span id="freshness"></span>
+          <span id="coverage"></span>
+        </div>
+
+        <canvas id="chart" height="120"></canvas>
+
+        <div id="insights">
+          <h3>Spikes</h3>
+          <div id="spikes" class="cards"></div>
+        </div>
+
+        <div id="sourcesWrap">
+          <h3>Top sources</h3>
+          <div id="sources" class="sources"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div>© <span id="yr"></span> TrendPeak</div>
+      <a href="#" id="dlReport" class="link">Download sample report</a>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
 
