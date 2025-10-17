@@ -32,16 +32,14 @@ form.addEventListener('submit', async e => {
     if (!r.ok) throw new Error('API error');
     const data = await r.json();
 
-    // normalize response shape
     const regions = Array.isArray(data.regions) ? data.regions : [];
-    const sources = data.sources
-      ? data.sources
-      : { news: Array.isArray(data.top_sources) ? data.top_sources : [], reddit: [], youtube: [] };
+    const sources = data.sources || { news: [], reddit: [], youtube: [] };
+    const explore = Array.isArray(data.explore) ? data.explore : [];
 
     freshnessEl.textContent = 'Updated just now';
     drawChart(data.timeline || []);
     renderSpikes(data.spikes || []);
-    renderSources(sources, regions);
+    renderSources(sources, regions, explore);
     updateURL(q, geo);
   } catch (err) {
     spikesEl.innerHTML = 'Failed to load';
@@ -72,7 +70,7 @@ function renderSpikes(spikes){
   });
 }
 
-function renderSources(sources, regions){
+function renderSources(sources, regions, explore){
   sourcesEl.innerHTML = '';
 
   if (Array.isArray(regions) && regions.length){
@@ -82,9 +80,22 @@ function renderSources(sources, regions){
     sourcesEl.appendChild(box);
   }
 
-  section('News', sources?.news || [], i => row(i.site, i.title, i.url));
-  section('Reddit', sources?.reddit || [], i => row(i.site, i.score ? `${i.title} • ${i.score}` : i.title, i.url));
-  section('YouTube', sources?.youtube || [], i => videoRow(i));
+  section('News', sources.news || [], i => row(i.site, i.title, i.url));
+  section('Reddit', sources.reddit || [], i => row(i.site, i.score ? `${i.title} • ${i.score}` : i.title, i.url));
+  section('YouTube', sources.youtube || [], i => videoRow(i));
+
+  if (explore && explore.length){
+    const hdr = document.createElement('div');
+    hdr.className = 'small';
+    hdr.style.marginTop = '10px';
+    hdr.textContent = 'Quick explore';
+    sourcesEl.appendChild(hdr);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'card';
+    wrap.innerHTML = explore.map(e => `<a href="${e.url}" target="_blank" rel="noopener" style="margin-right:12px">${escapeHtml(e.label)}</a>`).join('');
+    sourcesEl.appendChild(wrap);
+  }
 }
 
 function section(title, list, renderFn){
