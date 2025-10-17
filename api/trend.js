@@ -1,10 +1,11 @@
 import googleTrends from "google-trends-api";
+import { parseStringPromise } from "xml2js";
 
-// simple in-memory cache: { key: { data, expiresAt } }
+// cache
 const cache = new Map();
-const TTL_MS = 10 * 60 * 1000; // 10 minutes
+const TTL_MS = 10 * 60 * 1000;
 
-function cacheKey(q, geo) {
+function keyOf(q, geo) {
   return `${q.toLowerCase()}::${geo}`;
 }
 
@@ -13,22 +14,56 @@ function detectSpikes(timeline) {
   if (!vals.length) return [];
   const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
   const std = Math.sqrt(vals.reduce((s, v) => s + (v - mean) * (v - mean), 0) / vals.length);
-  const spikes = [];
+  const out = [];
   for (const p of timeline) {
     if (p.v > mean + 2 * std) {
       const percent = Math.round(100 * (p.v - mean) / Math.max(1, mean));
-      spikes.push({ time: p.t, percent, reason: "Sharp rise in interest" });
+      out.push({ time: p.t, percent, reason: "Sharp rise in interest" });
     }
   }
-  return spikes;
+  return out;
 }
 
-function hostFrom(link) {
-  try { return new URL(link).hostname.replace(/^www\./, ""); } catch { return "source"; }
+function hostFrom(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "source"; }
 }
 
+function fmtDateFromUnixSec(sec) {
+  return new Date(Number(sec) * 1000).toISOString().slice(0, 10);
+}
+
+// Google Trends timeline
+async function fetchTrends(q, geo = "NG") {
+  const startTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const endTime = new Date();
+  const raw = await googleTrends.interestOverTime({ keyword: q, startTime, endTime, geo });
+  const data = JSON.parse(raw);
+  const rows = data?.default?.timelineData || [];
+  return rows.map(r => ({ t: fmtDateFromUnixSec(r.time), v: Number(r.value?.[0] ?? 0) }));
+}
+
+// Google Trends regions
+async function fetchRegions(q, geo = "NG") {
+  const startTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const endTime = new Date();
+  const raw = await googleTrends.interestByRegion({
+    keyword: q,
+    startTime,
+    endTime,
+    geo,
+    resolution: "region"
+  });
+  const data = JSON.parse(raw);
+  const rows = data?.default?.geoMapData || [];
+  return rows
+    .map(r => ({ name: r.geoName || r.geoCode || "Region", value: Number(r.value?.[0] ?? 0) }))
+    .filter(r => r.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+}
+
+// News via GDELT
 async function fetchNews(q) {
-  // GDELT, last 30 days
   const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(q)}&timespan=30d&mode=artlist&format=json&maxrecords=10`;
   const r = await fetch(url, { headers: { "User-Agent": "TrendPeakBot/1.0" } });
   if (!r.ok) return [];
@@ -41,39 +76,53 @@ async function fetchNews(q) {
   }));
 }
 
-function fmtDateFromUnixSec(sec) {
-  return new Date(Number(sec) * 1000).toISOString().slice(0, 10);
+// Reddit top posts
+async function fetchReddit(q) {
+  const url = `https://www.reddit.com/search.json?q=${encodeURIComponent(q)}&sort=top&t=month&limit=5`;
+  const r = await fetch(url, { headers: { "User-Agent": "TrendPeakBot/1.0" } });
+  if (!r.ok) return [];
+  const data = await r.json();
+  const items = Array.isArray(data?.data?.children) ? data.data.children : [];
+  return items.map(x => {
+    const p = x.data || {};
+    return {
+      site: "reddit",
+      title: p.title || "Reddit post",
+      url: p.url || `https://www.reddit.com${p.permalink || ""}`,
+      score: p.score || 0
+    };
+  });
 }
 
-async function fetchTrends(q, geo = "NG") {
-  const startTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const endTime = new Date();
-  const raw = await googleTrends.interestOverTime({
-    keyword: q,
-    startTime,
-    endTime,
-    geo
+// YouTube videos via RSS
+async function fetchYouTube(q) {
+  const url = `https://www.youtube.com/feeds/videos.xml?search_query=${encodeURIComponent(q)}`;
+  const r = await fetch(url, { headers: { "User-Agent": "TrendPeakBot/1.0" } });
+  if (!r.ok) return [];
+  const xml = await r.text();
+  const parsed = await parseStringPromise(xml, { explicitArray: false });
+  const entries = parsed?.feed?.entry || [];
+  const arr = Array.isArray(entries) ? entries : [entries].filter(Boolean);
+  return arr.slice(0, 5).map(e => {
+    const id = (e?.id || "").split(":").pop();
+    const link = e?.link?.["@"]?.href || e?.link?.href || (id ? `https://www.youtube.com/watch?v=${id}` : "#");
+    const title = e?.title || "YouTube video";
+    const thumb = id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : "";
+    return { site: "youtube", title, url: link, thumbnail: thumb };
   });
-  const data = JSON.parse(raw);
-  const rows = data?.default?.timelineData || [];
-  const timeline = rows.map(r => ({
-    t: fmtDateFromUnixSec(r.time),
-    v: Number(r.value?.[0] ?? 0)
-  }));
-  return timeline;
 }
 
 function mockTimeline30() {
   const today = new Date();
-  const timeline = Array.from({ length: 30 }, (_, i) => {
+  const tl = Array.from({ length: 30 }, (_, i) => {
     const d = new Date(today);
     d.setDate(today.getDate() - (29 - i));
     const base = 40 + 10 * Math.sin(i / 3) + Math.floor(Math.random() * 7) - 3;
     return { t: d.toISOString().slice(0, 10), v: Math.max(0, Math.round(base)) };
   });
   const k = 10 + Math.floor(Math.random() * 16);
-  timeline[k].v += 30 + Math.floor(Math.random() * 50);
-  return timeline;
+  tl[k].v += 30 + Math.floor(Math.random() * 50);
+  return tl;
 }
 
 export default async function handler(req, res) {
@@ -81,8 +130,8 @@ export default async function handler(req, res) {
   const geo = String(req.query.geo || "NG").toUpperCase();
   if (!q) return res.status(400).json({ error: "Missing q" });
 
-  const key = cacheKey(q, geo);
-  const hit = cache.get(key);
+  const cacheKey = keyOf(q, geo);
+  const hit = cache.get(cacheKey);
   if (hit && hit.expiresAt > Date.now()) {
     return res.status(200).json(hit.data);
   }
@@ -91,16 +140,41 @@ export default async function handler(req, res) {
     let timeline = await fetchTrends(q, geo);
     if (!timeline.length) timeline = mockTimeline30();
 
-    const spikes = detectSpikes(timeline);
-    const top_sources = await fetchNews(q);
+    const [regions, news, reddit, youtube] = await Promise.all([
+      fetchRegions(q, geo).catch(() => []),
+      fetchNews(q).catch(() => []),
+      fetchReddit(q).catch(() => []),
+      fetchYouTube(q).catch(() => [])
+    ]);
 
-    const payload = { query: q, geo, timeline, spikes, top_sources };
-    cache.set(key, { data: payload, expiresAt: Date.now() + TTL_MS });
+    const spikes = detectSpikes(timeline);
+
+    const payload = {
+      query: q,
+      geo,
+      timeline,
+      spikes,
+      regions,
+      sources: {
+        news,
+        reddit,
+        youtube
+      }
+    };
+
+    cache.set(cacheKey, { data: payload, expiresAt: Date.now() + TTL_MS });
     res.status(200).json(payload);
   } catch {
     const timeline = mockTimeline30();
-    const payload = { query: q, geo, timeline, spikes: detectSpikes(timeline), top_sources: [] };
-    cache.set(key, { data: payload, expiresAt: Date.now() + TTL_MS });
+    const payload = {
+      query: q,
+      geo,
+      timeline,
+      spikes: detectSpikes(timeline),
+      regions: [],
+      sources: { news: [], reddit: [], youtube: [] }
+    };
+    cache.set(cacheKey, { data: payload, expiresAt: Date.now() + TTL_MS });
     res.status(200).json(payload);
   }
 }
