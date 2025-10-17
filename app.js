@@ -31,13 +31,21 @@ form.addEventListener('submit', async e => {
     const r = await fetch(`/api/trend?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`);
     if (!r.ok) throw new Error('API error');
     const data = await r.json();
+
+    // normalize response shape
+    const regions = Array.isArray(data.regions) ? data.regions : [];
+    const sources = data.sources
+      ? data.sources
+      : { news: Array.isArray(data.top_sources) ? data.top_sources : [], reddit: [], youtube: [] };
+
     freshnessEl.textContent = 'Updated just now';
-    drawChart(data.timeline);
-    renderSpikes(data.spikes);
-    renderSources(data.sources, data.regions);
+    drawChart(data.timeline || []);
+    renderSpikes(data.spikes || []);
+    renderSources(sources, regions);
     updateURL(q, geo);
-  } catch {
+  } catch (err) {
     spikesEl.innerHTML = 'Failed to load';
+    console.error(err);
   }
 });
 
@@ -92,7 +100,7 @@ function section(title, list, renderFn){
 function row(site, title, url){
   const div = document.createElement('div');
   div.className = 'source';
-  div.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${escapeHtml(site)} • ${escapeHtml(title)}</a>`;
+  div.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${escapeHtml(site || '')} • ${escapeHtml(title || '')}</a>`;
   return div;
 }
 
@@ -102,7 +110,7 @@ function videoRow(item){
   div.innerHTML = `
     <a href="${item.url}" target="_blank" rel="noopener">
       ${item.thumbnail ? `<img src="${item.thumbnail}" alt="" style="width:72px;height:40px;object-fit:cover;border-radius:6px;margin-right:8px;vertical-align:middle">` : ''}
-      ${escapeHtml(item.title)}
+      ${escapeHtml(item.title || '')}
     </a>`;
   return div;
 }
@@ -137,11 +145,11 @@ function renderTrending(list){
     div.className = 'card';
     const related = item.related && item.related.length ? `<div class="small">${item.related.join(' • ')}</div>` : '';
     const links = item.articles && item.articles.length
-      ? item.articles.map(a => `<div class="small"><a href="${a.url}" target="_blank" rel="noopener">${escapeHtml(a.title)}</a></div>`).join('')
+      ? item.articles.map(a => `<div class="small"><a href="${a.url}" target="_blank" rel="noopener">${escapeHtml(a.title || '')}</a></div>`).join('')
       : '';
-    div.innerHTML = `<strong>${escapeHtml(item.title)}</strong>${related}${links}`;
+    div.innerHTML = `<strong>${escapeHtml(item.title || '')}</strong>${related}${links}`;
     div.addEventListener('click', () => {
-      qEl.value = item.title;
+      qEl.value = item.title || '';
       form.dispatchEvent(new Event('submit'));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
