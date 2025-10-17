@@ -18,28 +18,29 @@ dlEl.addEventListener('click', e => { e.preventDefault(); alert('Reports coming 
 form.addEventListener('submit', async e => {
   e.preventDefault();
   const q = qEl.value.trim();
+  const geo = document.getElementById('geo').value;
   if (!q) return;
 
   resEl.classList.remove('hide');
   titleEl.textContent = q;
   freshnessEl.textContent = 'Fetching...';
-  coverageEl.textContent = 'Loading data...';
+  coverageEl.textContent = `Region: ${geo}`;
   spikesEl.innerHTML = 'Loading...';
   sourcesEl.innerHTML = '';
 
   try {
-    const r = await fetch(`/api/trend?q=${encodeURIComponent(q)}`);
+    const r = await fetch(`/api/trend?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`);
     if (!r.ok) throw new Error('API error');
     const data = await r.json();
     freshnessEl.textContent = 'Updated just now';
-    coverageEl.textContent = 'Sources: TrendPeak data (mock)';
     drawChart(data.timeline);
     renderSpikes(data.spikes);
     renderSources(data.top_sources);
-  } catch (err) {
+  } catch {
     spikesEl.innerHTML = 'Failed to load';
   }
 });
+
 
 function drawChart(points){
   const ctx = document.getElementById('chart').getContext('2d');
