@@ -1,5 +1,4 @@
 import googleTrends from "google-trends-api";
-import { parseStringPromise } from "xml2js";
 
 function detectSpikes(timeline) {
   const vals = timeline.map(p => p.v);
@@ -20,37 +19,25 @@ function hostFrom(link) {
   try { return new URL(link).hostname.replace(/^www\./, ""); } catch { return "source"; }
 }
 
-async function fetchNews(q, country = "NG") {
-  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-${country}&gl=${country}&ceid=${country}:en`;
-
-  const r = await fetch(rssUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 TrendPeakBot",
-      "Accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.8"
-    }
-  });
-
+async function fetchNews(q) {
+  // GDELT. Past 30 days. JSON.
+  const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(q)}&timespan=30d&mode=artlist&format=json&maxrecords=10`;
+  const r = await fetch(url, { headers: { "User-Agent": "TrendPeakBot/1.0" } });
   if (!r.ok) return [];
-  const xml = await r.text();
-
-  const parsed = await parseStringPromise(xml, { explicitArray: false });
-  const items = parsed?.rss?.channel?.item || [];
-  const arr = Array.isArray(items) ? items : [items].filter(Boolean);
-
-  return arr.slice(0, 5).map(it => ({
-    site: hostFrom(it.link || ""),
+  const data = await r.json();
+  const rows = Array.isArray(data?.articles) ? data.articles : [];
+  return rows.slice(0, 5).map(it => ({
+    site: hostFrom(it.url || ""),
     title: it.title || "News item",
-    url: it.link || "#"
+    url: it.url || "#"
   }));
 }
-
 
 function fmtDateFromUnixSec(sec) {
   return new Date(Number(sec) * 1000).toISOString().slice(0, 10);
 }
 
 async function fetchTrends(q) {
-  // last 30 days
   const startTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const endTime = new Date();
 
@@ -58,7 +45,7 @@ async function fetchTrends(q) {
     keyword: q,
     startTime,
     endTime,
- geo: "NG" // force Nigeria only
+    geo: "NG"
   });
 
   const data = JSON.parse(raw);
@@ -78,7 +65,6 @@ export default async function handler(req, res) {
   try {
     let timeline = await fetchTrends(q);
 
-    // fallback to mock if empty
     if (!timeline.length) {
       const today = new Date();
       timeline = Array.from({ length: 30 }, (_, i) => {
@@ -91,11 +77,10 @@ export default async function handler(req, res) {
     }
 
     const spikes = detectSpikes(timeline);
-    const top_sources = await fetchNews(q, "NG");
+    const top_sources = await fetchNews(q);
 
     res.status(200).json({ query: q, timeline, spikes, top_sources });
   } catch (e) {
-    // hard fallback on any error
     const today = new Date();
     const timeline = Array.from({ length: 30 }, (_, i) => {
       const d = new Date(today); d.setDate(today.getDate() - (29 - i));
