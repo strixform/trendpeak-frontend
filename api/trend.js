@@ -22,16 +22,28 @@ function hostFrom(link) {
 
 async function fetchNews(q, country = "NG") {
   const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-${country}&gl=${country}&ceid=${country}:en`;
-  const xml = await fetch(rssUrl).then(r => r.text());
+
+  const r = await fetch(rssUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 TrendPeakBot",
+      "Accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.8"
+    }
+  });
+
+  if (!r.ok) return [];
+  const xml = await r.text();
+
   const parsed = await parseStringPromise(xml, { explicitArray: false });
   const items = parsed?.rss?.channel?.item || [];
   const arr = Array.isArray(items) ? items : [items].filter(Boolean);
+
   return arr.slice(0, 5).map(it => ({
     site: hostFrom(it.link || ""),
     title: it.title || "News item",
     url: it.link || "#"
   }));
 }
+
 
 function fmtDateFromUnixSec(sec) {
   return new Date(Number(sec) * 1000).toISOString().slice(0, 10);
@@ -46,7 +58,7 @@ async function fetchTrends(q) {
     keyword: q,
     startTime,
     endTime,
-    geo: "" // set to "NG" to force Nigeria only
+ geo: "NG" // force Nigeria only
   });
 
   const data = JSON.parse(raw);
