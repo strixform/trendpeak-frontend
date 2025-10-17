@@ -1,5 +1,3 @@
-const API_BASE = '';
-
 const form = document.getElementById('searchForm');
 const qEl = document.getElementById('q');
 const resEl = document.getElementById('result');
@@ -18,7 +16,8 @@ dlEl.addEventListener('click', e => { e.preventDefault(); alert('Reports coming 
 form.addEventListener('submit', async e => {
   e.preventDefault();
   const q = qEl.value.trim();
-  const geo = document.getElementById('geo').value;
+  const geoSel = document.getElementById('geo');
+  const geo = geoSel ? geoSel.value : 'NG';
   if (!q) return;
 
   resEl.classList.remove('hide');
@@ -35,12 +34,11 @@ form.addEventListener('submit', async e => {
     freshnessEl.textContent = 'Updated just now';
     drawChart(data.timeline);
     renderSpikes(data.spikes);
-    renderSources(data.top_sources);
+    renderSources(data.sources, data.regions);
   } catch {
     spikesEl.innerHTML = 'Failed to load';
   }
 });
-
 
 function drawChart(points){
   const ctx = document.getElementById('chart').getContext('2d');
@@ -49,8 +47,8 @@ function drawChart(points){
   if (chart) chart.destroy();
   chart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{ data: values, fill: false, tension: .25 }] },
-    options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#1a1a1a' } } } }
+    data: { labels, datasets: [{ data: values, fill: false, tension: .2, pointRadius: 2 }] },
+    options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { suggestedMax: 100, grid: { color: '#1a1a1a' } } } }
   });
 }
 
@@ -65,13 +63,49 @@ function renderSpikes(spikes){
   });
 }
 
-function renderSources(list){
-  if (!list || !list.length) return;
+function renderSources(sources, regions){
   sourcesEl.innerHTML = '';
-  list.forEach(x => {
-    const div = document.createElement('div');
-    div.className = 'source';
-    div.innerHTML = `<a href="${x.url}" target="_blank" rel="noopener">${x.site} • ${x.title}</a>`;
-    sourcesEl.appendChild(div);
-  });
+
+  if (Array.isArray(regions) && regions.length){
+    const box = document.createElement('div');
+    box.className = 'card';
+    box.innerHTML = `<strong>Top regions</strong><div class="small">${regions.map(r => `${escapeHtml(r.name)} ${r.value}`).join(' • ')}</div>`;
+    sourcesEl.appendChild(box);
+  }
+
+  section('News', sources.news || [], item => row(item.site, item.title, item.url));
+  section('Reddit', sources.reddit || [], item => row(item.site, item.score ? `${item.title} • ${item.score}` : item.title, item.url));
+  section('YouTube', sources.youtube || [], item => videoRow(item));
+}
+
+function section(title, list, renderFn){
+  if (!list.length) return;
+  const hdr = document.createElement('div');
+  hdr.className = 'small';
+  hdr.style.marginTop = '10px';
+  hdr.textContent = title;
+  sourcesEl.appendChild(hdr);
+  list.forEach(x => sourcesEl.appendChild(renderFn(x)));
+}
+
+function row(site, title, url){
+  const div = document.createElement('div');
+  div.className = 'source';
+  div.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${escapeHtml(site)} • ${escapeHtml(title)}</a>`;
+  return div;
+}
+
+function videoRow(item){
+  const div = document.createElement('div');
+  div.className = 'source';
+  div.innerHTML = `
+    <a href="${item.url}" target="_blank" rel="noopener">
+      ${item.thumbnail ? `<img src="${item.thumbnail}" alt="" style="width:72px;height:40px;object-fit:cover;border-radius:6px;margin-right:8px;vertical-align:middle">` : ''}
+      ${escapeHtml(item.title)}
+    </a>`;
+  return div;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
