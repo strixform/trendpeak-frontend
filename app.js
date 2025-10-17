@@ -35,6 +35,7 @@ form.addEventListener('submit', async e => {
     drawChart(data.timeline);
     renderSpikes(data.spikes);
     renderSources(data.sources, data.regions);
+    updateURL(q, geo);
   } catch {
     spikesEl.innerHTML = 'Failed to load';
   }
@@ -109,6 +110,8 @@ function videoRow(item){
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
+
+/* Trending feed */
 async function loadTrending() {
   const geoSel = document.getElementById('geo');
   const geo = geoSel ? geoSel.value : 'NG';
@@ -146,3 +149,31 @@ function renderTrending(list){
   });
 }
 
+/* Shareable URLs */
+function updateURL(q, geo){
+  const params = new URLSearchParams(location.search);
+  params.set('q', q);
+  params.set('geo', geo);
+  history.replaceState(null, '', `?${params.toString()}`);
+}
+
+function initFromURL(){
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q');
+  const geo = params.get('geo');
+  const geoSel = document.getElementById('geo');
+  if (geo && geoSel) geoSel.value = geo.toUpperCase();
+  if (q){
+    qEl.value = q;
+    form.dispatchEvent(new Event('submit'));
+  } else {
+    loadTrending();
+  }
+}
+
+/* Init */
+document.addEventListener('DOMContentLoaded', () => {
+  initFromURL();
+  const geoSel = document.getElementById('geo');
+  if (geoSel) geoSel.addEventListener('change', loadTrending);
+});
