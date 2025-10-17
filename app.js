@@ -109,3 +109,40 @@ function videoRow(item){
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
+async function loadTrending() {
+  const geoSel = document.getElementById('geo');
+  const geo = geoSel ? geoSel.value : 'NG';
+  const box = document.getElementById('trending');
+  if (!box) return;
+  box.innerHTML = 'Loading...';
+  try {
+    const r = await fetch(`/api/top?geo=${encodeURIComponent(geo)}`);
+    const data = await r.json();
+    renderTrending(data.top || []);
+  } catch {
+    box.innerHTML = 'Failed to load';
+  }
+}
+
+function renderTrending(list){
+  const box = document.getElementById('trending');
+  if (!box) return;
+  if (!list.length) { box.innerHTML = 'No data'; return; }
+  box.innerHTML = '';
+  list.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    const related = item.related && item.related.length ? `<div class="small">${item.related.join(' • ')}</div>` : '';
+    const links = item.articles && item.articles.length
+      ? item.articles.map(a => `<div class="small"><a href="${a.url}" target="_blank" rel="noopener">${escapeHtml(a.title)}</a></div>`).join('')
+      : '';
+    div.innerHTML = `<strong>${escapeHtml(item.title)}</strong>${related}${links}`;
+    div.addEventListener('click', () => {
+      qEl.value = item.title;
+      form.dispatchEvent(new Event('submit'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    box.appendChild(div);
+  });
+}
+
