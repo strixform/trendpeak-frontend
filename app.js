@@ -73,9 +73,9 @@ function renderSources(sources, regions){
     sourcesEl.appendChild(box);
   }
 
-  section('News', sources.news || [], item => row(item.site, item.title, item.url));
-  section('Reddit', sources.reddit || [], item => row(item.site, item.score ? `${item.title} • ${item.score}` : item.title, item.url));
-  section('YouTube', sources.youtube || [], item => videoRow(item));
+  section('News', sources?.news || [], i => row(i.site, i.title, i.url));
+  section('Reddit', sources?.reddit || [], i => row(i.site, i.score ? `${i.title} • ${i.score}` : i.title, i.url));
+  section('YouTube', sources?.youtube || [], i => videoRow(i));
 }
 
 function section(title, list, renderFn){
