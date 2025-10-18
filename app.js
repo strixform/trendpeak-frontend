@@ -13,6 +13,56 @@ document.addEventListener('DOMContentLoaded', () => {
   const sourcesEl = document.getElementById('sources');
   const yrEl = document.getElementById('yr');
   const dlEl = document.getElementById('dlReport');
+  const saveBtn = document.getElementById('saveBtn');
+const savedBox = document.getElementById('saved');
+
+  function getSaved(){
+  try{ return JSON.parse(localStorage.getItem('tp_saved') || '[]'); }catch{return[]}
+}
+function setSaved(list){
+  localStorage.setItem('tp_saved', JSON.stringify(list.slice(0,30)));
+}
+function renderSaved(){
+  if(!savedBox) return;
+  const list = getSaved();
+  if(!list.length){ savedBox.innerHTML = ''; return; }
+  savedBox.innerHTML = '';
+  list.forEach(({q,geo}, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.innerHTML = `<span>${escapeHtml(q)} · ${geo}</span><button class="x" title="Remove">×</button>`;
+    chip.addEventListener('click', e => {
+      if(e.target.classList.contains('x')) return;
+      qEl.value = q;
+      const geoSel = document.getElementById('geo');
+      if(geoSel) geoSel.value = geo;
+      form.dispatchEvent(new Event('submit'));
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+    chip.querySelector('.x').addEventListener('click', e => {
+      e.stopPropagation();
+      const l = getSaved();
+      l.splice(idx,1);
+      setSaved(l);
+      renderSaved();
+    });
+    savedBox.appendChild(chip);
+  });
+}
+function saveCurrent(){
+  const q = qEl.value.trim();
+  const geoSel = document.getElementById('geo');
+  const geo = geoSel ? geoSel.value : 'NG';
+  if(!q) return;
+  const list = getSaved();
+  const exists = list.find(x => x.q.toLowerCase() === q.toLowerCase() && x.geo === geo);
+  if(!exists){
+    list.unshift({q,geo});
+    setSaved(list);
+    renderSaved();
+  }
+}
+
 
   if (!form || !qEl || !resEl) {
     console.error('Missing DOM nodes. Check IDs in index.html');
