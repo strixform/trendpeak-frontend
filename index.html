@@ -81,10 +81,34 @@
     </footer>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="/app.js"></script>
+  <!-- Load libs and app with defer and a cache-buster -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script defer src="/app.js?v=4"></script>
+
+  <!-- Safety net: attach a submit handler even if app.js is cached or fails -->
   <script>
-    console.log('TrendPeak index loaded');
+    window.addEventListener('DOMContentLoaded', function(){
+      const form = document.getElementById('searchForm');
+      const qEl = document.getElementById('q');
+      if (!form || !qEl) return;
+
+      // Only attach once
+      if (!form.__tpBound) {
+        form.__tpBound = true;
+        form.addEventListener('submit', function(ev){
+          ev.preventDefault();
+          // If app.js installed the real handler, it will run too.
+          // Fallback: simple redirect style URL so app.js can pick it up on load.
+          const geo = document.getElementById('geo') ? document.getElementById('geo').value : 'NG';
+          const q = qEl.value.trim();
+          if (!q) return;
+          const url = `?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`;
+          history.replaceState(null, '', url);
+          // Kick app.js if it’s already loaded
+          try { document.dispatchEvent(new Event('tp-kick')); } catch(e) {}
+        });
+      }
+    });
   </script>
 </body>
 </html>
