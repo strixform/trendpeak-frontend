@@ -10,6 +10,18 @@ const yrEl = document.getElementById('yr');
 const dlEl = document.getElementById('dlReport');
 let chart;
 
+// new refs
+const copyLinkBtn = document.getElementById('copyLinkBtn');
+const csvBtn = document.getElementById('csvBtn');
+const shareX = document.getElementById('shareX');
+const shareTT = document.getElementById('shareTT');
+const shareYT = document.getElementById('shareYT');
+
+// last result cache for CSV
+let lastTimeline = [];
+let lastQuery = '';
+let lastGeo = 'NG';
+
 yrEl.textContent = new Date().getFullYear();
 dlEl.addEventListener('click', e => { e.preventDefault(); alert('Reports coming soon'); });
 
@@ -36,11 +48,16 @@ form.addEventListener('submit', async e => {
     const sources = data.sources || { news: [], reddit: [], youtube: [] };
     const explore = Array.isArray(data.explore) ? data.explore : [];
 
+    lastTimeline = data.timeline || [];
+    lastQuery = q;
+    lastGeo = geo;
+
     freshnessEl.textContent = 'Updated just now';
-    drawChart(data.timeline || []);
+    drawChart(lastTimeline);
     renderSpikes(data.spikes || []);
     renderSources(sources, regions, explore);
     updateURL(q, geo);
+    updateShareLinks(q, geo);
   } catch (err) {
     spikesEl.innerHTML = 'Failed to load';
     console.error(err);
@@ -188,6 +205,31 @@ function initFromURL(){
   } else {
     loadTrending();
   }
+}
+
+/* Share links and CSV */
+function updateShareLinks(q, geo){
+  const url = `${location.origin}${location.pathname}?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`;
+  if (copyLinkBtn) copyLinkBtn.onclick = async () => {
+    try { await navigator.clipboard.writeText(url); copyLinkBtn.textContent = 'Copied'; setTimeout(() => copyLinkBtn.textContent = 'Copy link', 1500); } catch {}
+  };
+  if (shareX) shareX.href = `https://x.com/intent/tweet?text=${encodeURIComponent(q)}&url=${encodeURIComponent(url)}`;
+  if (shareTT) shareTT.href = `https://www.tiktok.com/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(q)}`;
+  if (shareYT) shareYT.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+  if (csvBtn) csvBtn.onclick = downloadCSV;
+}
+
+function downloadCSV(){
+  if (!lastTimeline.length) return;
+  const rows = [['date','value'], ...lastTimeline.map(p => [p.t, String(p.v)])];
+  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${lastQuery}_${lastGeo}_trend.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
 /* Init */
