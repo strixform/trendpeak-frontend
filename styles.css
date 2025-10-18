@@ -155,4 +155,9 @@ select{
 }
 .nav a:hover{color:#fff}
 .footer-links{display:flex;gap:12px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px 0}
+.chip{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:var(--panel);cursor:pointer}
+.chip .x{border:0;background:transparent;color:#aaa;cursor:pointer}
+.chip:hover{filter:brightness(1.08)}
+
 
