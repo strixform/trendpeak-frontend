@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Contact • TrendPeak</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand"><div class="logo"></div><h1>TrendPeak</h1></div>
+      <nav class="nav">
+        <a href="/index.html">Home</a>
+        <a href="/pricing.html">Pricing</a>
+        <a href="/about.html">About</a>
+        <a href="/contact.html">Contact</a>
+      </nav>
+      <p class="tag">We reply within 24 hours</p>
+    </header>
+
+    <main>
+      <form action="https://formspree.io/f/your-form-id" method="POST" class="card" style="display:grid;gap:10px;max-width:520px">
+        <input type="text" name="name" placeholder="Your name" required>
+        <input type="email" name="email" placeholder="Your email" required>
+        <textarea name="message" rows="5" placeholder="Your message" style="padding:12px 14px;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text)" required></textarea>
+        <button type="submit" style="width:max-content;padding:10px 14px;background:var(--accent2);color:#fff;border:0;border-radius:10px;cursor:pointer">Send</button>
+      </form>
+      <div class="small" style="margin-top:8px">Replace the form action URL with your Formspree form ID.</div>
+    </main>
+
+    <footer>
+      <div>© <span id="yr"></span> TrendPeak</div>
+      <div class="footer-links">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </footer>
+  </div>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>
