@@ -304,5 +304,8 @@ function saveCurrent(){
   initFromURL();
   const geoSel = document.getElementById('geo');
   if (geoSel) geoSel.addEventListener('change', loadTrending);
+  if(saveBtn) saveBtn.addEventListener('click', saveCurrent);
+renderSaved();
+
   console.log('TrendPeak app ready');
 });
