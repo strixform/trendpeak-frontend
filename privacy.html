@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Privacy • TrendPeak</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand"><div class="logo"></div><h1>TrendPeak</h1></div>
+      <nav class="nav">
+        <a href="/index.html">Home</a>
+        <a href="/pricing.html">Pricing</a>
+        <a href="/about.html">About</a>
+        <a href="/contact.html">Contact</a>
+      </nav>
+      <p class="tag">Your data and privacy</p>
+    </header>
+
+    <main>
+      <div class="card">
+        <strong>Privacy</strong>
+        <div class="small">We do not sell personal data. We collect anonymous analytics to improve the product. Contact us to remove any data.</div>
+      </div>
+    </main>
+
+    <footer>
+      <div>© <span id="yr"></span> TrendPeak</div>
+      <div class="footer-links">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </footer>
+  </div>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>
