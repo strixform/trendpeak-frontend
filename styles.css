@@ -120,4 +120,23 @@ select{
   border-radius:10px;
   color:var(--text);
 }
+.sharebar{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin:8px 0 12px 0;
+}
+.sharebar a, .sharebar button{
+  padding:8px 10px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  text-decoration:none;
+  cursor:pointer;
+  font-size:14px;
+}
+.sharebar a:hover, .sharebar button:hover{
+  filter:brightness(1.1);
+}
 
