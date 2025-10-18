@@ -11,51 +11,49 @@
 <body>
   <div class="wrap">
     <header class="top">
-    <div class="brand">
-  <div class="logo"></div>
-  <h1>TrendPeak</h1>
-</div>
-<nav class="nav">
-  <a href="/index.html">Home</a>
-  <a href="/pricing.html">Pricing</a>
-  <a href="/about.html">About</a>
-  <a href="/contact.html">Contact</a>
-</nav>
-<p class="tag">See the rise. Understand the reason.</p>
-
+      <div class="brand">
+        <div class="logo"></div>
+        <h1>TrendPeak</h1>
+      </div>
+      <nav class="nav">
+        <a href="/index.html">Home</a>
+        <a href="/pricing.html">Pricing</a>
+        <a href="/about.html">About</a>
+        <a href="/contact.html">Contact</a>
+      </nav>
+      <p class="tag">See the rise. Understand the reason.</p>
+    </header>
 
     <main>
-      <form id="searchForm" autocomplete="off">
-  <input id="q" type="text" placeholder="Search a name, keyword, or hashtag">
-  <select id="geo">
-    <option value="NG" selected>NG</option>
-    <option value="US">US</option>
-    <option value="GB">GB</option>
-    <option value="GH">GH</option>
-    <option value="ZA">ZA</option>
-  </select>
-  <button type="submit">Search</button>
-</form>
-
+      <form id="searchForm" autocomplete="off" action="javascript:void(0)">
+        <input id="q" type="text" placeholder="Search a name, keyword, or hashtag">
+        <select id="geo">
+          <option value="NG" selected>NG</option>
+          <option value="US">US</option>
+          <option value="GB">GB</option>
+          <option value="GH">GH</option>
+          <option value="ZA">ZA</option>
+        </select>
+        <button type="submit">Search</button>
+      </form>
 
       <div id="hint">Try: Asake, #FuelPrice, iPhone 16, Afcon</div>
-      
-<section id="trendingWrap">
-  <h3>Trending now</h3>
-  <div id="trending" class="cards"></div>
-</section>
+
+      <section id="trendingWrap">
+        <h3>Trending now</h3>
+        <div id="trending" class="cards"></div>
+      </section>
 
       <section id="result" class="hide">
         <h2 id="title"></h2>
         <div class="meta">
           <div id="sharebar" class="sharebar">
-  <button id="copyLinkBtn">Copy link</button>
-  <a id="shareX" href="#" target="_blank" rel="noopener">Share on X</a>
-  <a id="shareTT" href="#" target="_blank" rel="noopener">Share on TikTok</a>
-  <a id="shareYT" href="#" target="_blank" rel="noopener">Share on YouTube</a>
-  <button id="csvBtn">Download CSV</button>
-</div>
-
+            <button id="copyLinkBtn">Copy link</button>
+            <a id="shareX" href="#" target="_blank" rel="noopener">Share on X</a>
+            <a id="shareTT" href="#" target="_blank" rel="noopener">Share on TikTok</a>
+            <a id="shareYT" href="#" target="_blank" rel="noopener">Share on YouTube</a>
+            <button id="csvBtn">Download CSV</button>
+          </div>
           <span id="freshness"></span>
           <span id="coverage"></span>
         </div>
@@ -74,18 +72,19 @@
       </section>
     </main>
 
-   <footer>
-  <div>© <span id="yr"></span> TrendPeak</div>
-  <div class="footer-links">
-    <a href="/privacy.html">Privacy</a>
-    <a href="/terms.html">Terms</a>
-  </div>
-</footer>
-
+    <footer>
+      <div>© <span id="yr"></span> TrendPeak</div>
+      <div class="footer-links">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </footer>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="/app.js"></script>
+  <script>
+    console.log('TrendPeak index loaded');
+  </script>
 </body>
 </html>
-
