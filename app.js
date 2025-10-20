@@ -34,6 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastQuery = '';
   let lastGeo = 'NG';
 
+  function track(name, props){
+    try{ if(window.plausible) window.plausible(name, { props }); }catch{}
+  }
+
   form.addEventListener('submit', onSearchSubmit);
 
   async function onSearchSubmit(e){
@@ -66,12 +70,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (freshnessEl) freshnessEl.textContent = 'Updated just now';
       drawChart(lastTimeline);
-      renderSpikes(data.spikes || []);
-      renderSources(sources, regions, explore);
+
+      setTimeout(() => {
+        renderSpikes(data.spikes || []);
+        renderSources(sources, regions, explore);
+      }, 50);
+
       updateURL(q, geo);
       updateShareLinks(q, geo);
       pushHistory({ q, geo });
       renderHistory();
+      track('search', { q, geo });
       console.log('Search success', { q, geo });
     } catch (err) {
       if (spikesEl) spikesEl.innerHTML = 'Failed to load';
@@ -199,6 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
         : '';
       div.innerHTML = `<strong>${escapeHtml(item.title || '')}</strong>${related}${links}`;
       div.addEventListener('click', () => {
+        track('trending_click', { q: item.title || '', geo: (document.getElementById('geo') || {}).value || 'NG' });
         qEl.value = item.title || '';
         form.dispatchEvent(new Event('submit'));
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -240,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(a);
     a.click();
     a.remove();
+    track('csv_download', { q: lastQuery, geo: lastGeo });
   }
 
   function initFromURL(){
@@ -256,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /* Saved searches */
+  // saved searches
   function getSaved(){
     try{ return JSON.parse(localStorage.getItem('tp_saved') || '[]'); }catch{return[]}
   }
@@ -275,8 +286,8 @@ document.addEventListener('DOMContentLoaded', () => {
       chip.addEventListener('click', e => {
         if(e.target.classList.contains('x')) return;
         qEl.value = q;
-        const geoSel = document.getElementById('geo');
-        if(geoSel) geoSel.value = geo;
+        const gs = document.getElementById('geo');
+        if(gs) gs.value = geo;
         form.dispatchEvent(new Event('submit'));
         window.scrollTo({top:0,behavior:'smooth'});
       });
@@ -292,8 +303,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function saveCurrent(){
     const q = qEl.value.trim();
-    const geoSel = document.getElementById('geo');
-    const geo = geoSel ? geoSel.value : 'NG';
+    const gs = document.getElementById('geo');
+    const geo = gs ? gs.value : 'NG';
     if(!q) return;
     const list = getSaved();
     const exists = list.find(x => x.q.toLowerCase() === q.toLowerCase() && x.geo === geo);
@@ -301,12 +312,13 @@ document.addEventListener('DOMContentLoaded', () => {
       list.unshift({q,geo});
       setSaved(list);
       renderSaved();
+      track('save_search', { q, geo });
     }
   }
   if (saveBtn) saveBtn.addEventListener('click', saveCurrent);
   renderSaved();
 
-  /* Recent searches */
+  // recent
   function getHistory(){
     try{ return JSON.parse(localStorage.getItem('tp_recent') || '[]'); }catch{return[]}
   }
@@ -328,8 +340,8 @@ document.addEventListener('DOMContentLoaded', () => {
       chip.textContent = `${q} · ${geo}`;
       chip.addEventListener('click', () => {
         qEl.value = q;
-        const geoSel = document.getElementById('geo');
-        if(geoSel) geoSel.value = geo;
+        const gs = document.getElementById('geo');
+        if(gs) gs.value = geo;
         form.dispatchEvent(new Event('submit'));
         window.scrollTo({top:0,behavior:'smooth'});
       });
@@ -338,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (clearRecent) clearRecent.addEventListener('click', () => { setHistory([]); renderHistory(); });
 
-  /* Welcome modal */
+  // welcome modal
   const welcome = document.getElementById('welcome');
   const welcomeOk = document.getElementById('welcomeOk');
   const welcomeHide = document.getElementById('welcomeHide');
@@ -356,8 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (welcomeHide) welcomeHide.addEventListener('click', hideWelcome);
 
   initFromURL();
-  const geoSel = document.getElementById('geo');
-  if (geoSel) geoSel.addEventListener('change', loadTrending);
+  const gs = document.getElementById('geo');
+  if (gs) gs.addEventListener('change', loadTrending);
   renderHistory();
   showWelcomeOnce();
 
