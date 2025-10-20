@@ -12,78 +12,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const spikesEl = document.getElementById('spikes');
   const sourcesEl = document.getElementById('sources');
   const yrEl = document.getElementById('yr');
-  const dlEl = document.getElementById('dlReport');
+  const copyLinkBtn = document.getElementById('copyLinkBtn');
+  const csvBtn = document.getElementById('csvBtn');
+  const shareX = document.getElementById('shareX');
+  const shareTT = document.getElementById('shareTT');
+  const shareYT = document.getElementById('shareYT');
   const saveBtn = document.getElementById('saveBtn');
-const savedBox = document.getElementById('saved');
-
-  function getSaved(){
-  try{ return JSON.parse(localStorage.getItem('tp_saved') || '[]'); }catch{return[]}
-}
-function setSaved(list){
-  localStorage.setItem('tp_saved', JSON.stringify(list.slice(0,30)));
-}
-function renderSaved(){
-  if(!savedBox) return;
-  const list = getSaved();
-  if(!list.length){ savedBox.innerHTML = ''; return; }
-  savedBox.innerHTML = '';
-  list.forEach(({q,geo}, idx) => {
-    const chip = document.createElement('div');
-    chip.className = 'chip';
-    chip.innerHTML = `<span>${escapeHtml(q)} · ${geo}</span><button class="x" title="Remove">×</button>`;
-    chip.addEventListener('click', e => {
-      if(e.target.classList.contains('x')) return;
-      qEl.value = q;
-      const geoSel = document.getElementById('geo');
-      if(geoSel) geoSel.value = geo;
-      form.dispatchEvent(new Event('submit'));
-      window.scrollTo({top:0,behavior:'smooth'});
-    });
-    chip.querySelector('.x').addEventListener('click', e => {
-      e.stopPropagation();
-      const l = getSaved();
-      l.splice(idx,1);
-      setSaved(l);
-      renderSaved();
-    });
-    savedBox.appendChild(chip);
-  });
-}
-function saveCurrent(){
-  const q = qEl.value.trim();
-  const geoSel = document.getElementById('geo');
-  const geo = geoSel ? geoSel.value : 'NG';
-  if(!q) return;
-  const list = getSaved();
-  const exists = list.find(x => x.q.toLowerCase() === q.toLowerCase() && x.geo === geo);
-  if(!exists){
-    list.unshift({q,geo});
-    setSaved(list);
-    renderSaved();
-  }
-}
-
+  const savedBox = document.getElementById('saved');
+  const recentBox = document.getElementById('recent');
+  const clearRecent = document.getElementById('clearRecent');
 
   if (!form || !qEl || !resEl) {
     console.error('Missing DOM nodes. Check IDs in index.html');
     return;
   }
 
+  if (yrEl) yrEl.textContent = new Date().getFullYear();
+
   let chart;
   let lastTimeline = [];
   let lastQuery = '';
   let lastGeo = 'NG';
 
-  const copyLinkBtn = document.getElementById('copyLinkBtn');
-  const csvBtn = document.getElementById('csvBtn');
-  const shareX = document.getElementById('shareX');
-  const shareTT = document.getElementById('shareTT');
-  const shareYT = document.getElementById('shareYT');
+  form.addEventListener('submit', onSearchSubmit);
 
-  if (yrEl) yrEl.textContent = new Date().getFullYear();
-  if (dlEl) dlEl.addEventListener('click', e => { e.preventDefault(); alert('Reports coming soon'); });
-
-  form.addEventListener('submit', async e => {
+  async function onSearchSubmit(e){
     e.preventDefault();
     const q = qEl.value.trim();
     const geoSel = document.getElementById('geo');
@@ -117,12 +70,14 @@ function saveCurrent(){
       renderSources(sources, regions, explore);
       updateURL(q, geo);
       updateShareLinks(q, geo);
+      pushHistory({ q, geo });
+      renderHistory();
       console.log('Search success', { q, geo });
     } catch (err) {
       if (spikesEl) spikesEl.innerHTML = 'Failed to load';
       console.error(err);
     }
-  });
+  }
 
   function drawChart(points){
     const canvas = document.getElementById('chart');
@@ -268,10 +223,10 @@ function saveCurrent(){
         setTimeout(() => copyLinkBtn.textContent = 'Copy link', 1500);
       } catch {}
     };
+    if (csvBtn) csvBtn.onclick = downloadCSV;
     if (shareX) shareX.href = `https://x.com/intent/tweet?text=${encodeURIComponent(q)}&url=${encodeURIComponent(url)}`;
     if (shareTT) shareTT.href = `https://www.tiktok.com/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(q)}`;
     if (shareYT) shareYT.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
-    if (csvBtn) csvBtn.onclick = downloadCSV;
   }
 
   function downloadCSV(){
@@ -301,11 +256,110 @@ function saveCurrent(){
     }
   }
 
+  /* Saved searches */
+  function getSaved(){
+    try{ return JSON.parse(localStorage.getItem('tp_saved') || '[]'); }catch{return[]}
+  }
+  function setSaved(list){
+    localStorage.setItem('tp_saved', JSON.stringify(list.slice(0,30)));
+  }
+  function renderSaved(){
+    if(!savedBox) return;
+    const list = getSaved();
+    if(!list.length){ savedBox.innerHTML = ''; return; }
+    savedBox.innerHTML = '';
+    list.forEach(({q,geo}, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.innerHTML = `<span>${escapeHtml(q)} · ${geo}</span><button class="x" title="Remove">×</button>`;
+      chip.addEventListener('click', e => {
+        if(e.target.classList.contains('x')) return;
+        qEl.value = q;
+        const geoSel = document.getElementById('geo');
+        if(geoSel) geoSel.value = geo;
+        form.dispatchEvent(new Event('submit'));
+        window.scrollTo({top:0,behavior:'smooth'});
+      });
+      chip.querySelector('.x').addEventListener('click', e => {
+        e.stopPropagation();
+        const l = getSaved();
+        l.splice(idx,1);
+        setSaved(l);
+        renderSaved();
+      });
+      savedBox.appendChild(chip);
+    });
+  }
+  function saveCurrent(){
+    const q = qEl.value.trim();
+    const geoSel = document.getElementById('geo');
+    const geo = geoSel ? geoSel.value : 'NG';
+    if(!q) return;
+    const list = getSaved();
+    const exists = list.find(x => x.q.toLowerCase() === q.toLowerCase() && x.geo === geo);
+    if(!exists){
+      list.unshift({q,geo});
+      setSaved(list);
+      renderSaved();
+    }
+  }
+  if (saveBtn) saveBtn.addEventListener('click', saveCurrent);
+  renderSaved();
+
+  /* Recent searches */
+  function getHistory(){
+    try{ return JSON.parse(localStorage.getItem('tp_recent') || '[]'); }catch{return[]}
+  }
+  function setHistory(list){
+    localStorage.setItem('tp_recent', JSON.stringify(list.slice(0,15)));
+  }
+  function pushHistory(item){
+    const list = getHistory().filter(x => !(x.q.toLowerCase() === item.q.toLowerCase() && x.geo === item.geo));
+    list.unshift(item);
+    setHistory(list);
+  }
+  function renderHistory(){
+    if(!recentBox) return;
+    const list = getHistory();
+    recentBox.innerHTML = '';
+    list.forEach(({q,geo}) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = `${q} · ${geo}`;
+      chip.addEventListener('click', () => {
+        qEl.value = q;
+        const geoSel = document.getElementById('geo');
+        if(geoSel) geoSel.value = geo;
+        form.dispatchEvent(new Event('submit'));
+        window.scrollTo({top:0,behavior:'smooth'});
+      });
+      recentBox.appendChild(chip);
+    });
+  }
+  if (clearRecent) clearRecent.addEventListener('click', () => { setHistory([]); renderHistory(); });
+
+  /* Welcome modal */
+  const welcome = document.getElementById('welcome');
+  const welcomeOk = document.getElementById('welcomeOk');
+  const welcomeHide = document.getElementById('welcomeHide');
+  function showWelcomeOnce(){
+    const seen = localStorage.getItem('tp_seen');
+    if (seen || !welcome) return;
+    welcome.classList.remove('hide');
+  }
+  function hideWelcome(){
+    if (!welcome) return;
+    welcome.classList.add('hide');
+    localStorage.setItem('tp_seen','1');
+  }
+  if (welcomeOk) welcomeOk.addEventListener('click', hideWelcome);
+  if (welcomeHide) welcomeHide.addEventListener('click', hideWelcome);
+
   initFromURL();
   const geoSel = document.getElementById('geo');
   if (geoSel) geoSel.addEventListener('change', loadTrending);
-  if(saveBtn) saveBtn.addEventListener('click', saveCurrent);
-renderSaved();
+  renderHistory();
+  showWelcomeOnce();
 
   console.log('TrendPeak app ready');
 });
