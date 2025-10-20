@@ -159,5 +159,23 @@ select{
 .chip{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:var(--panel);cursor:pointer}
 .chip .x{border:0;background:transparent;color:#aaa;cursor:pointer}
 .chip:hover{filter:brightness(1.08)}
+/* keep your existing styles above */
 
+/* nav and footer helpers already added earlier */
+
+.sharebar{display:flex;gap:10px;align-items:center;margin:8px 0 12px 0}
+.sharebar a,.sharebar button{padding:8px 10px;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;cursor:pointer;font-size:14px}
+.sharebar a:hover,.sharebar button:hover{filter:brightness(1.1)}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px 0}
+.chip{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:var(--panel);cursor:pointer}
+.chip .x{border:0;background:transparent;color:#aaa;cursor:pointer}
+.chip:hover{filter:brightness(1.08)}
+.mini{padding:6px 10px;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:30}
+.modal.hide{display:none}
+.modal .box{width:min(520px,92vw);background:#111;padding:18px;border:1px solid var(--border);border-radius:12px}
+.modal .actions{display:flex;gap:10px;margin-top:12px}
+.modal .actions .ghost{background:transparent;border:1px solid var(--border);color:#ddd}
 
