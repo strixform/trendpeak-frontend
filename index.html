@@ -35,17 +35,21 @@
           <option value="ZA">ZA</option>
         </select>
         <button type="submit">Search</button>
-<button type="button" id="saveBtn">Save</button>
-
+        <button type="button" id="saveBtn">Save</button>
       </form>
 
       <div id="hint">Try: Asake, #FuelPrice, iPhone 16, Afcon</div>
 
       <section id="savedWrap">
-  <h3>Saved</h3>
-  <div id="saved" class="chips"></div>
-</section>
+        <h3>Saved</h3>
+        <div id="saved" class="chips"></div>
+      </section>
 
+      <section id="recentWrap">
+        <h3>Recent</h3>
+        <div id="recent" class="chips"></div>
+        <button id="clearRecent" class="mini">Clear</button>
+      </section>
 
       <section id="trendingWrap">
         <h3>Trending now</h3>
@@ -89,34 +93,19 @@
     </footer>
   </div>
 
-  <!-- Load libs and app with defer and a cache-buster -->
+  <!-- Welcome modal -->
+  <div id="welcome" class="modal hide">
+    <div class="box">
+      <h3>Welcome to TrendPeak</h3>
+      <p class="small">Search any name, topic, or hashtag. See the timeline, spikes, regions, and sources. Save your favorite searches.</p>
+      <div class="actions">
+        <button id="welcomeOk">Get started</button>
+        <button id="welcomeHide" class="ghost">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script defer src="/app.js?v=4"></script>
-
-  <!-- Safety net: attach a submit handler even if app.js is cached or fails -->
-  <script>
-    window.addEventListener('DOMContentLoaded', function(){
-      const form = document.getElementById('searchForm');
-      const qEl = document.getElementById('q');
-      if (!form || !qEl) return;
-
-      // Only attach once
-      if (!form.__tpBound) {
-        form.__tpBound = true;
-        form.addEventListener('submit', function(ev){
-          ev.preventDefault();
-          // If app.js installed the real handler, it will run too.
-          // Fallback: simple redirect style URL so app.js can pick it up on load.
-          const geo = document.getElementById('geo') ? document.getElementById('geo').value : 'NG';
-          const q = qEl.value.trim();
-          if (!q) return;
-          const url = `?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`;
-          history.replaceState(null, '', url);
-          // Kick app.js if it’s already loaded
-          try { document.dispatchEvent(new Event('tp-kick')); } catch(e) {}
-        });
-      }
-    });
-  </script>
+  <script defer src="/app.js?v=5"></script>
 </body>
 </html>
