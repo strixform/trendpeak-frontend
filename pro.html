@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Pro activated • TrendPeak</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand"><div class="logo"></div><h1>TrendPeak</h1></div>
+      <nav class="nav">
+        <a href="/index.html">Home</a>
+        <a href="/pricing.html">Pricing</a>
+        <a href="/about.html">About</a>
+        <a href="/contact.html">Contact</a>
+      </nav>
+      <p class="tag">Pro set up</p>
+    </header>
+
+    <main>
+      <div class="card" id="msg">
+        <strong>Finalizing Pro...</strong>
+        <div class="small">Please wait.</div>
+      </div>
+    </main>
+
+    <footer>
+      <div>© <span id="yr"></span> TrendPeak</div>
+      <div class="footer-links">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    function setPro(days){
+      const now = Date.now();
+      const exp = now + days*24*60*60*1000;
+      localStorage.setItem('tp_pro', JSON.stringify({ active: true, exp }));
+    }
+
+    function ok(msg, go){
+      const box = document.getElementById('msg');
+      box.innerHTML = `<strong>${msg}</strong><div class="small"><a class="link" href="${go}">Continue</a></div>`;
+    }
+
+    (function(){
+      const p = new URLSearchParams(location.search);
+      // Expect success=1 from your payment redirect
+      const success = p.get('success') === '1';
+      // Optional plan days. Default 30.
+      const days = Number(p.get('days') || '30');
+      if (success){
+        setPro(days);
+        ok('Pro activated', '/index.html');
+      } else {
+        ok('Could not verify payment', '/pricing.html');
+      }
+    })();
+  </script>
+</body>
+</html>
