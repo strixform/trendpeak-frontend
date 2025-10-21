@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const alertQ = document.getElementById('alert_q');
   const alertGeo = document.getElementById('alert_geo');
   const alertForm = document.getElementById('alertForm');
+  const proBadge = document.getElementById('proBadge');
 
   if (!form || !qEl || !resEl) {
     console.error('Missing DOM nodes. Check IDs in index.html');
@@ -40,6 +41,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function track(name, props){
     try{ if(window.plausible) window.plausible(name, { props }); }catch{}
+  }
+
+  function getPro(){
+    try{
+      const raw = localStorage.getItem('tp_pro');
+      if (!raw) return { active: false, exp: 0 };
+      const obj = JSON.parse(raw);
+      const active = !!obj.active && Number(obj.exp) > Date.now();
+      return { active, exp: Number(obj.exp || 0) };
+    }catch{
+      return { active: false, exp: 0 };
+    }
+  }
+
+  function showProBadge(){
+    if (!proBadge) return;
+    const p = getPro();
+    if (p.active){
+      const d = new Date(p.exp);
+      proBadge.textContent = `Pro active. Renews on ${d.toISOString().slice(0,10)}`;
+    } else {
+      proBadge.textContent = `Free plan`;
+    }
+  }
+
+  function requirePro(action){
+    const p = getPro();
+    if (p.active) return true;
+    alert('Pro only. Go to Pricing to upgrade.');
+    try{ window.location.href = '/pricing.html'; }catch{}
+    return false;
   }
 
   form.addEventListener('submit', onSearchSubmit);
@@ -240,8 +272,12 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => copyLinkBtn.textContent = 'Copy link', 1500);
       } catch {}
     };
-    if (csvBtn) csvBtn.onclick = downloadCSV;
-    if (pngBtn) pngBtn.onclick = downloadPNG;
+    if (csvBtn) csvBtn.onclick = () => { if (requirePro('csv')) downloadCSV(); };
+    if (pngBtn) pngBtn.onclick = () => { if (requirePro('png')) downloadPNG(); };
+    if (alertForm) alertForm.onsubmit = (e) => {
+      if (!requirePro('alerts')) { e.preventDefault(); return false; }
+      return true;
+    };
     if (shareX) shareX.href = `https://x.com/intent/tweet?text=${encodeURIComponent(q)}&url=${encodeURIComponent(url)}`;
     if (shareTT) shareTT.href = `https://www.tiktok.com/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(q)}`;
     if (shareYT) shareYT.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
@@ -285,6 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       loadTrending();
     }
+    showProBadge();
   }
 
   function getSaved(){
