@@ -178,4 +178,16 @@ select{
 .modal .box{width:min(520px,92vw);background:#111;padding:18px;border:1px solid var(--border);border-radius:12px}
 .modal .actions{display:flex;gap:10px;margin-top:12px}
 .modal .actions .ghost{background:transparent;border:1px solid var(--border);color:#ddd}
+.skel{
+  background: linear-gradient(90deg,#151515 25%,#1a1a1a 37%,#151515 63%);
+  background-size: 400% 100%;
+  animation: skel 1.2s ease infinite;
+  border-radius: 10px;
+}
+@keyframes skel{
+  0%{background-position: 100% 50%}
+  100%{background-position: 0% 50%}
+}
+.skel-row{height:12px;margin:6px 0}
+
 
