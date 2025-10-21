@@ -21,6 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedBox = document.getElementById('saved');
   const recentBox = document.getElementById('recent');
   const clearRecent = document.getElementById('clearRecent');
+  const alertQ = document.getElementById('alert_q');
+  const alertGeo = document.getElementById('alert_geo');
+  const alertForm = document.getElementById('alertForm');
 
   if (!form || !qEl || !resEl) {
     console.error('Missing DOM nodes. Check IDs in index.html');
@@ -80,6 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
       updateShareLinks(q, geo);
       pushHistory({ q, geo });
       renderHistory();
+      if (alertQ) alertQ.value = lastQuery;
+      if (alertGeo) alertGeo.value = lastGeo;
       track('search', { q, geo });
       console.log('Search success', { q, geo });
     } catch (err) {
@@ -366,6 +371,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (welcomeOk) welcomeOk.addEventListener('click', hideWelcome);
   if (welcomeHide) welcomeHide.addEventListener('click', hideWelcome);
+
+  // alert form success toast
+  if (alertForm) {
+    alertForm.addEventListener('submit', () => {
+      setTimeout(() => { alert('Subscribed for spike alerts'); }, 100);
+    });
+  }
 
   initFromURL();
   const gs = document.getElementById('geo');
