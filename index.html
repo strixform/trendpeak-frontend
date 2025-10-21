@@ -7,15 +7,17 @@
   <meta name="description" content="Understand what is moving online.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
+
   <meta property="og:title" content="TrendPeak">
-<meta property="og:description" content="Search any topic. See the rise, spikes, regions, and sources.">
-<meta property="og:url" content="https://trendpeak.io/">
-<meta property="og:type" content="website">
-<meta property="og:image" content="https://trendpeak.io/favicon.svg">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="TrendPeak">
-<meta name="twitter:description" content="Search any topic. See the rise, spikes, regions, and sources.">
-<meta name="twitter:image" content="https://trendpeak.io/favicon.svg">
+  <meta property="og:description" content="Search any topic. See the rise, spikes, regions, and sources.">
+  <meta property="og:url" content="https://trendpeak.io/">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://trendpeak.io/favicon.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TrendPeak">
+  <meta name="twitter:description" content="Search any topic. See the rise, spikes, regions, and sources.">
+  <meta name="twitter:image" content="https://trendpeak.io/favicon.svg">
+
   <script defer data-domain="trendpeak.io" src="https://plausible.io/js/script.js"></script>
 </head>
 <body>
@@ -27,6 +29,7 @@
       </div>
       <nav class="nav">
         <a href="/index.html">Home</a>
+        <a href="/top.html">Top rising</a>
         <a href="/pricing.html">Pricing</a>
         <a href="/about.html">About</a>
         <a href="/contact.html">Contact</a>
@@ -82,6 +85,17 @@
 
         <canvas id="chart" height="120"></canvas>
 
+        <div id="alertWrap" class="card" style="margin-top:12px">
+          <strong>Get spike alerts by email</strong>
+          <form id="alertForm" action="https://formspree.io/f/your-form-id" method="POST" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <input type="email" name="email" placeholder="you@email.com" required>
+            <input type="hidden" name="q" id="alert_q">
+            <input type="hidden" name="geo" id="alert_geo">
+            <button type="submit">Subscribe</button>
+          </form>
+          <div class="small">We email you when this term spikes. You can unsubscribe anytime.</div>
+        </div>
+
         <div id="insights">
           <h3>Spikes</h3>
           <div id="spikes" class="cards"></div>
@@ -103,7 +117,6 @@
     </footer>
   </div>
 
-  <!-- Welcome modal -->
   <div id="welcome" class="modal hide">
     <div class="box">
       <h3>Welcome to TrendPeak</h3>
@@ -116,6 +129,6 @@
   </div>
 
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script defer src="/app.js?v=5"></script>
+  <script defer src="/app.js?v=6"></script>
 </body>
 </html>
