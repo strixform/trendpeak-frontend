@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const yrEl = document.getElementById('yr');
   const copyLinkBtn = document.getElementById('copyLinkBtn');
   const csvBtn = document.getElementById('csvBtn');
+  const pngBtn = document.getElementById('pngBtn');
   const shareX = document.getElementById('shareX');
   const shareTT = document.getElementById('shareTT');
   const shareYT = document.getElementById('shareYT');
@@ -57,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (titleEl) titleEl.textContent = q;
     if (freshnessEl) freshnessEl.textContent = 'Fetching...';
     if (coverageEl) coverageEl.textContent = `Region: ${geo}`;
-    if (spikesEl) spikesEl.innerHTML = 'Loading...';
-    if (sourcesEl) sourcesEl.innerHTML = '';
+
+    paintSkeletons();
 
     try {
       const r = await fetch(`/api/trend?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`);
@@ -89,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Search success', { q, geo });
     } catch (err) {
       if (spikesEl) spikesEl.innerHTML = 'Failed to load';
+      if (sourcesEl) sourcesEl.innerHTML = 'Failed to load';
       console.error(err);
     }
   }
@@ -239,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch {}
     };
     if (csvBtn) csvBtn.onclick = downloadCSV;
+    if (pngBtn) pngBtn.onclick = downloadPNG;
     if (shareX) shareX.href = `https://x.com/intent/tweet?text=${encodeURIComponent(q)}&url=${encodeURIComponent(url)}`;
     if (shareTT) shareTT.href = `https://www.tiktok.com/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(q)}`;
     if (shareYT) shareYT.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
@@ -258,6 +261,18 @@ document.addEventListener('DOMContentLoaded', () => {
     track('csv_download', { q: lastQuery, geo: lastGeo });
   }
 
+  function downloadPNG(){
+    const canvas = document.getElementById('chart');
+    if (!canvas) return;
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `${lastQuery}_${lastGeo}_trend.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    track('png_download', { q: lastQuery, geo: lastGeo });
+  }
+
   function initFromURL(){
     const params = new URLSearchParams(location.search);
     const q = params.get('q');
@@ -272,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // saved searches
   function getSaved(){
     try{ return JSON.parse(localStorage.getItem('tp_saved') || '[]'); }catch{return[]}
   }
@@ -323,7 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (saveBtn) saveBtn.addEventListener('click', saveCurrent);
   renderSaved();
 
-  // recent
   function getHistory(){
     try{ return JSON.parse(localStorage.getItem('tp_recent') || '[]'); }catch{return[]}
   }
@@ -355,7 +368,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (clearRecent) clearRecent.addEventListener('click', () => { setHistory([]); renderHistory(); });
 
-  // welcome modal
   const welcome = document.getElementById('welcome');
   const welcomeOk = document.getElementById('welcomeOk');
   const welcomeHide = document.getElementById('welcomeHide');
@@ -372,7 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (welcomeOk) welcomeOk.addEventListener('click', hideWelcome);
   if (welcomeHide) welcomeHide.addEventListener('click', hideWelcome);
 
-  // alert form success toast
   if (alertForm) {
     alertForm.addEventListener('submit', () => {
       setTimeout(() => { alert('Subscribed for spike alerts'); }, 100);
@@ -387,3 +398,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   console.log('TrendPeak app ready');
 });
+
+function paintSkeletons(){
+  const spikes = document.getElementById('spikes');
+  const sources = document.getElementById('sources');
+  if (spikes){
+    spikes.innerHTML = '';
+    for(let i=0;i<3;i++){
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `<div class="skel skel-row" style="width:60%"></div><div class="skel skel-row" style="width:40%"></div>`;
+      spikes.appendChild(div);
+    }
+  }
+  if (sources){
+    sources.innerHTML = '';
+    for(let i=0;i<5;i++){
+      const div = document.createElement('div');
+      div.className = 'source';
+      div.innerHTML = `<div class="skel skel-row" style="width:${50 + i*8}%"></div>`;
+      sources.appendChild(div);
+    }
+  }
+}
