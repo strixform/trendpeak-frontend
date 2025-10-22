@@ -2,7 +2,8 @@ console.log('TrendPeak app loading');
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM ready');
-
+  const proModal = document.getElementById('proModal');
+  const proClose = document.getElementById('proClose');
   const ogBtn = document.getElementById('ogBtn');
   const form = document.getElementById('searchForm');
   const qEl = document.getElementById('q');
