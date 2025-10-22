@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const clearRecent = document.getElementById('clearRecent');
   const alertQ = document.getElementById('alert_q');
   const alertGeo = document.getElementById('alert_geo');
+  const pngBtn = document.getElementById('pngBtn');
+const sharePageBtn = document.getElementById('sharePageBtn');
+
 
   if (!form || !qEl || !resEl) {
     console.error('Missing DOM nodes. Check IDs in index.html');
