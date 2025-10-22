@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TrendPeak • Share</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+
+  <meta property="og:title" content="TrendPeak">
+  <meta property="og:description" content="See the rise, spikes, regions, and sources.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="">
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const p = new URLSearchParams(location.search);
+      const q = p.get('q') || 'Trend';
+      const labels = p.get('labels') || '';
+      const values = p.get('values') || '';
+      const geo = p.get('geo') || 'NG';
+
+      document.title = q + ' • TrendPeak';
+      document.getElementById('title').textContent = q;
+      document.getElementById('geo').textContent = geo;
+
+      const imgUrl = `/api/og?q=${encodeURIComponent(q)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
+      const img = document.getElementById('img');
+      img.src = imgUrl;
+
+      const og1 = document.querySelector('meta[property="og:image"]');
+      const og2 = document.querySelector('meta[name="twitter:image"]');
+      if (og1) og1.setAttribute('content', imgUrl);
+      if (og2) og2.setAttribute('content', imgUrl);
+
+      const link = `${location.origin}/?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`;
+      const copyBtn = document.getElementById('copy');
+      copyBtn.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(link); copyBtn.textContent = 'Copied'; setTimeout(()=>copyBtn.textContent='Copy link',1200); } catch {}
+      });
+      document.getElementById('open').href = link;
+    });
+  </script>
+</head>
+<body>
+  <div class="wrap" style="max-width:820px">
+    <header class="top">
+      <div class="brand">
+        <div class="logo"></div>
+        <h1>TrendPeak</h1>
+      </div>
+    </header>
+
+    <main>
+      <h2 id="title"></h2>
+      <div class="small" style="margin-bottom:10px">Region: <span id="geo"></span></div>
+      <img id="img" alt="Trend chart" style="width:100%;border-radius:10px;border:1px solid #222">
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button id="copy">Copy link</button>
+        <a id="open" class="button" href="#" target="_blank" rel="noopener">Open on TrendPeak</a>
+      </div>
+    </main>
+
+    <footer>
+      <div>© <span id="yr"></span> TrendPeak</div>
+    </footer>
+    <script>
+      const y = document.getElementById('yr'); if (y) y.textContent = new Date().getFullYear();
+    </script>
+  </div>
+</body>
+</html>
