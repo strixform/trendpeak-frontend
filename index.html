@@ -17,6 +17,8 @@
   <meta name="twitter:title" content="TrendPeak">
   <meta name="twitter:description" content="Search any topic. See the rise, spikes, regions, and sources.">
   <meta name="twitter:image" content="https://trendpeak.io/favicon.svg">
+
+  <!-- Backend meta optional, same-origin by default -->
   <meta name="tp-backend" content="https://trendpeak.io">
 
   <script defer data-domain="trendpeak.io" src="https://plausible.io/js/script.js"></script>
@@ -25,9 +27,9 @@
   <div class="wrap">
     <header class="top">
       <div class="brand">
+        <p id="proBadge" class="small" style="margin-top:6px"></p>
         <div class="logo"></div>
         <h1>TrendPeak</h1>
-        <p id="proBadge" class="small" style="margin-top:6px"></p>
       </div>
       <nav class="nav">
         <a href="/index.html">Home</a>
@@ -79,11 +81,10 @@
             <a id="shareX" href="#" target="_blank" rel="noopener">Share on X</a>
             <a id="shareTT" href="#" target="_blank" rel="noopener">Share on TikTok</a>
             <a id="shareYT" href="#" target="_blank" rel="noopener">Share on YouTube</a>
-            <button id="csvBtn">Download CSV</button>
-            <button id="pngBtn">Download PNG</button>
-            <button id="ogBtn">Share image</button>
-            <button id="pngBtn">Download PNG</button>
-<a id="sharePageBtn" href="#" target="_blank" rel="noopener">Share page</a>
+            <button id="csvBtn">Download CSV</button>        <!-- Pro -->
+            <button id="pngBtn">Download PNG</button>         <!-- Free, canvas -->
+            <button id="ogBtn">Share image</button>            <!-- Pro, API image -->
+            <a id="sharePageBtn" href="#" target="_blank" rel="noopener">Share page</a> <!-- Free -->
           </div>
           <span id="freshness"></span>
           <span id="coverage"></span>
@@ -123,29 +124,19 @@
     </footer>
   </div>
 
-  <div id="welcome" class="modal hide">
+  <!-- Pro Modal -->
+  <div id="proModal" class="modal hide">
     <div class="box">
-      <h3>Welcome to TrendPeak</h3>
-      <p class="small">Search any name, topic, or hashtag. See the timeline, spikes, regions, and sources. Save your favorite searches.</p>
+      <h3>Pro feature</h3>
+      <p class="small">This feature is available for Pro users. Upgrade to access spike alerts, CSV downloads, and more.</p>
       <div class="actions">
-        <button id="welcomeOk">Get started</button>
-        <button id="welcomeHide" class="ghost">Dismiss</button>
+        <a href="/pricing.html" class="button">View plans</a>
+        <button id="proClose" class="ghost">Close</button>
       </div>
     </div>
   </div>
 
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script defer src="/app.js?v=11"></script>
-  <!-- Pro Modal -->
-<div id="proModal" class="modal hide">
-  <div class="box">
-    <h3>Pro feature</h3>
-    <p class="small">This feature is available for Pro users. Upgrade to access spike alerts, CSV downloads, and more.</p>
-    <div class="actions">
-      <a href="/pricing.html" class="button">View plans</a>
-      <button id="proClose" class="ghost">Close</button>
-    </div>
-  </div>
-</div>
+  <script defer src="/app.js?v=12"></script>
 </body>
 </html>
