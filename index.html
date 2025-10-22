@@ -18,16 +18,13 @@
   <meta name="twitter:description" content="Search any topic. See the rise, spikes, regions, and sources.">
   <meta name="twitter:image" content="https://trendpeak.io/favicon.svg">
 
-  <!-- Backend meta optional, same-origin by default -->
   <meta name="tp-backend" content="https://trendpeak.io">
-
   <script defer data-domain="trendpeak.io" src="https://plausible.io/js/script.js"></script>
 </head>
 <body>
   <div class="wrap">
     <header class="top">
       <div class="brand">
-        <p id="proBadge" class="small" style="margin-top:6px"></p>
         <p id="proBadge" class="badge-pro hide">Pro</p>
         <div class="logo"></div>
         <h1>TrendPeak</h1>
@@ -82,13 +79,13 @@
             <a id="shareX" href="#" target="_blank" rel="noopener">Share on X</a>
             <a id="shareTT" href="#" target="_blank" rel="noopener">Share on TikTok</a>
             <a id="shareYT" href="#" target="_blank" rel="noopener">Share on YouTube</a>
-            <button id="csvBtn">Download CSV</button>        <!-- Pro -->
-            <button id="pngBtn">Download PNG</button>         <!-- Free, canvas -->
-            <button id="ogBtn">Share image</button>            <!-- Pro, API image -->
-            <a id="sharePageBtn" href="#" target="_blank" rel="noopener">Share page</a> <!-- Free -->
+            <button id="csvBtn">Download CSV</button>
+            <button id="pngBtn">Download PNG</button>
+            <button id="ogBtn">Share image</button>
+            <a id="sharePageBtn" href="#" target="_blank" rel="noopener">Share page</a>
+            <span id="freshness" class="meta-right"></span>
+            <span id="coverage" class="meta-right"></span>
           </div>
-          <span id="freshness"></span>
-          <span id="coverage"></span>
         </div>
 
         <canvas id="chart" height="120"></canvas>
@@ -125,7 +122,17 @@
     </footer>
   </div>
 
-  <!-- Pro Modal -->
+  <div id="welcome" class="modal hide">
+    <div class="box">
+      <h3>Welcome to TrendPeak</h3>
+      <p class="small">Search any name, topic, or hashtag. See the timeline, spikes, regions, and sources. Save your favorite searches.</p>
+      <div class="actions">
+        <button id="welcomeOk">Get started</button>
+        <button id="welcomeHide" class="ghost">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
   <div id="proModal" class="modal hide">
     <div class="box">
       <h3>Pro feature</h3>
@@ -138,6 +145,6 @@
   </div>
 
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script defer src="/app.js?v=12"></script>
+  <script defer src="/app.js?v=13"></script>
 </body>
 </html>
