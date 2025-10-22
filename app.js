@@ -266,6 +266,18 @@ if (sharePageBtn) {
     a.remove();
     track('csv_download', { q: lastQuery, geo: lastGeo });
   }
+function downloadPNG(){
+  const canvas = document.getElementById('chart');
+  if (!canvas) return;
+  const url = canvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${lastQuery}_${lastGeo}_trend.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  track('png_download', { q: lastQuery, geo: lastGeo });
+}
 
   function openShareImage(){
     if (!lastTimeline.length) return;
