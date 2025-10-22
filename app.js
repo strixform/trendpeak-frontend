@@ -46,6 +46,13 @@ const sharePageBtn = document.getElementById('sharePageBtn');
   }
 
   form.addEventListener('submit', onSearchSubmit);
+  
+  if (!isPro()) {
+  document.getElementById('alertWrap').style.display = 'none';
+} else {
+  document.getElementById('alertWrap').style.display = 'block';
+}
+
 
   async function onSearchSubmit(e){
     e.preventDefault();
@@ -247,8 +254,8 @@ if (sharePageBtn) {
         setTimeout(() => copyLinkBtn.textContent = 'Copy link', 1500);
       } catch {}
     };
-    if (csvBtn) csvBtn.onclick = downloadCSV;
-    if (ogBtn) ogBtn.onclick = openShareImage;
+   if (csvBtn) csvBtn.onclick = () => { isPro() ? downloadCSV() : showProModal(); };
+  if (ogBtn) ogBtn.onclick = () => { isPro() ? openShareImage() : showProModal(); };
     if (shareX) shareX.href = `https://x.com/intent/tweet?text=${encodeURIComponent(q)}&url=${encodeURIComponent(url)}`;
     if (shareTT) shareTT.href = `https://www.tiktok.com/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(q)}`;
     if (shareYT) shareYT.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
