@@ -2,9 +2,7 @@ console.log('TrendPeak app loading');
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM ready');
-  const proModal = document.getElementById('proModal');
-  const proClose = document.getElementById('proClose');
-  const ogBtn = document.getElementById('ogBtn');
+
   const form = document.getElementById('searchForm');
   const qEl = document.getElementById('q');
   const resEl = document.getElementById('result');
@@ -14,27 +12,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const spikesEl = document.getElementById('spikes');
   const sourcesEl = document.getElementById('sources');
   const yrEl = document.getElementById('yr');
+
   const copyLinkBtn = document.getElementById('copyLinkBtn');
-  const csvBtn = document.getElementById('csvBtn');
+  const csvBtn = document.getElementById('csvBtn');           // Pro
+  const pngBtn = document.getElementById('pngBtn');           // Free
+  const ogBtn = document.getElementById('ogBtn');             // Pro
   const shareX = document.getElementById('shareX');
   const shareTT = document.getElementById('shareTT');
   const shareYT = document.getElementById('shareYT');
+  const sharePageBtn = document.getElementById('sharePageBtn');
+
   const saveBtn = document.getElementById('saveBtn');
   const savedBox = document.getElementById('saved');
   const recentBox = document.getElementById('recent');
   const clearRecent = document.getElementById('clearRecent');
-  const alertQ = document.getElementById('alert_q');
-  const alertGeo = document.getElementById('alert_geo');
-  const pngBtn = document.getElementById('pngBtn');
-const sharePageBtn = document.getElementById('sharePageBtn');
 
+  const proModal = document.getElementById('proModal');
+  const proClose = document.getElementById('proClose');
+
+  if (yrEl) yrEl.textContent = new Date().getFullYear();
 
   if (!form || !qEl || !resEl) {
     console.error('Missing DOM nodes. Check IDs in index.html');
     return;
   }
-
-  if (yrEl) yrEl.textContent = new Date().getFullYear();
 
   let chart;
   let lastTimeline = [];
@@ -42,17 +43,17 @@ const sharePageBtn = document.getElementById('sharePageBtn');
   let lastGeo = 'NG';
 
   function track(name, props){
-    try{ if(window.plausible) window.plausible(name, { props }); }catch{}
+    try { if (window.plausible) window.plausible(name, { props }); } catch {}
   }
 
-  form.addEventListener('submit', onSearchSubmit);
-  
-  if (!isPro()) {
-  document.getElementById('alertWrap').style.display = 'none';
-} else {
-  document.getElementById('alertWrap').style.display = 'block';
-}
+  function isPro(){
+    try { return localStorage.getItem('tp_pro') === '1'; } catch { return false; }
+  }
+  function showProModal(){ if (proModal) proModal.classList.remove('hide'); }
+  function hideProModal(){ if (proModal) proModal.classList.add('hide'); }
+  if (proClose) proClose.addEventListener('click', hideProModal);
 
+  form.addEventListener('submit', onSearchSubmit);
 
   async function onSearchSubmit(e){
     e.preventDefault();
@@ -70,6 +71,14 @@ const sharePageBtn = document.getElementById('sharePageBtn');
     if (coverageEl) coverageEl.textContent = `Region: ${geo}`;
     if (spikesEl) spikesEl.innerHTML = 'Loading...';
     if (sourcesEl) sourcesEl.innerHTML = '';
+
+    // show or hide alert block by Pro state
+    const alertWrap = document.getElementById('alertWrap');
+    if (alertWrap) alertWrap.style.display = isPro() ? 'block' : 'none';
+    const alert_q = document.getElementById('alert_q');
+    const alert_geo = document.getElementById('alert_geo');
+    if (alert_q) alert_q.value = q;
+    if (alert_geo) alert_geo.value = geo;
 
     try {
       const r = await fetch(`/api/trend?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`);
@@ -96,13 +105,6 @@ const sharePageBtn = document.getElementById('sharePageBtn');
       renderHistory();
       track('search', { q, geo });
       console.log('Search success', { q, geo });
-      if (pngBtn) pngBtn.onclick = downloadPNG;
-if (sharePageBtn) {
-  const labels = lastTimeline.map(p => p.t.slice(5)).join(",");
-  const values = lastTimeline.map(p => p.v).join(",");
-  sharePageBtn.href = `/share.html?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
-}
-
     } catch (err) {
       if (spikesEl) spikesEl.innerHTML = 'Failed to load';
       console.error(err);
@@ -254,11 +256,21 @@ if (sharePageBtn) {
         setTimeout(() => copyLinkBtn.textContent = 'Copy link', 1500);
       } catch {}
     };
-   if (csvBtn) csvBtn.onclick = () => { isPro() ? downloadCSV() : showProModal(); };
-  if (ogBtn) ogBtn.onclick = () => { isPro() ? openShareImage() : showProModal(); };
+
+    if (pngBtn) pngBtn.onclick = downloadPNG; // free
+
+    if (csvBtn) csvBtn.onclick = () => { isPro() ? downloadCSV() : showProModal(); }; // pro
+    if (ogBtn) ogBtn.onclick = () => { isPro() ? openShareImage() : showProModal(); }; // pro
+
     if (shareX) shareX.href = `https://x.com/intent/tweet?text=${encodeURIComponent(q)}&url=${encodeURIComponent(url)}`;
     if (shareTT) shareTT.href = `https://www.tiktok.com/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(q)}`;
     if (shareYT) shareYT.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+
+    if (sharePageBtn) {
+      const labels = lastTimeline.map(p => p.t.slice(5)).join(',');
+      const values = lastTimeline.map(p => p.v).join(',');
+      sharePageBtn.href = `/share.html?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
+    }
   }
 
   function downloadCSV(){
@@ -274,25 +286,29 @@ if (sharePageBtn) {
     a.remove();
     track('csv_download', { q: lastQuery, geo: lastGeo });
   }
-function downloadPNG(){
-  const canvas = document.getElementById('chart');
-  if (!canvas) return;
-  const url = canvas.toDataURL('image/png');
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${lastQuery}_${lastGeo}_trend.png`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  track('png_download', { q: lastQuery, geo: lastGeo });
-}
+
+  function downloadPNG(){
+    const canvas = document.getElementById('chart');
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${lastQuery}_${lastGeo}_trend.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    track('png_download', { q: lastQuery, geo: lastGeo });
+  }
 
   function openShareImage(){
     if (!lastTimeline.length) return;
-    const labels = lastTimeline.map(p => p.t.slice(5)).join(",");
-    const values = lastTimeline.map(p => p.v).join(",");
-    const u = `/api/og?q=${encodeURIComponent(lastQuery)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
-    window.open(u, "_blank", "noopener");
+    const m = document.querySelector('meta[name="tp-backend"]');
+    const backend = m ? m.getAttribute('content') : '';
+    const base = backend && backend.startsWith('http') ? backend : '';
+    const labels = lastTimeline.map(p => p.t.slice(5)).join(',');
+    const values = lastTimeline.map(p => p.v).join(',');
+    const u = `${base}/api/og?q=${encodeURIComponent(lastQuery)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
+    window.open(u, '_blank', 'noopener');
   }
 
   function initFromURL(){
@@ -309,12 +325,12 @@ function downloadPNG(){
     }
   }
 
-  // Saved and recent remain unchanged below...
   function getSaved(){ try{ return JSON.parse(localStorage.getItem('tp_saved') || '[]'); }catch{return[]} }
   function setSaved(list){ localStorage.setItem('tp_saved', JSON.stringify(list.slice(0,30))); }
   function renderSaved(){
     if(!savedBox) return;
     const list = getSaved();
+    if(!list.length){ savedBox.innerHTML = ''; return; }
     savedBox.innerHTML = '';
     list.forEach(({q,geo}, idx) => {
       const chip = document.createElement('div');
@@ -405,20 +421,4 @@ function downloadPNG(){
   showWelcomeOnce();
 
   console.log('TrendPeak app ready');
-  function isPro(){
-  try { return localStorage.getItem('tp_pro') === '1'; }
-  catch { return false; }
-}
-
-function showProModal(){
-  if (!proModal) return;
-  proModal.classList.remove('hide');
-}
-
-function hideProModal(){
-  if (!proModal) return;
-  proModal.classList.add('hide');
-}
-
-if (proClose) proClose.addEventListener('click', hideProModal);
 });
