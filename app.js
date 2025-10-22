@@ -2,6 +2,7 @@ console.log('TrendPeak app loading');
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM ready');
+
   const ogBtn = document.getElementById('ogBtn');
   const form = document.getElementById('searchForm');
   const qEl = document.getElementById('q');
@@ -14,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const yrEl = document.getElementById('yr');
   const copyLinkBtn = document.getElementById('copyLinkBtn');
   const csvBtn = document.getElementById('csvBtn');
-  const pngBtn = document.getElementById('pngBtn');
   const shareX = document.getElementById('shareX');
   const shareTT = document.getElementById('shareTT');
   const shareYT = document.getElementById('shareYT');
@@ -24,8 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const clearRecent = document.getElementById('clearRecent');
   const alertQ = document.getElementById('alert_q');
   const alertGeo = document.getElementById('alert_geo');
-  const alertForm = document.getElementById('alertForm');
-  const proBadge = document.getElementById('proBadge');
 
   if (!form || !qEl || !resEl) {
     console.error('Missing DOM nodes. Check IDs in index.html');
@@ -41,37 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function track(name, props){
     try{ if(window.plausible) window.plausible(name, { props }); }catch{}
-  }
-
-  function getPro(){
-    try{
-      const raw = localStorage.getItem('tp_pro');
-      if (!raw) return { active: false, exp: 0 };
-      const obj = JSON.parse(raw);
-      const active = !!obj.active && Number(obj.exp) > Date.now();
-      return { active, exp: Number(obj.exp || 0) };
-    }catch{
-      return { active: false, exp: 0 };
-    }
-  }
-
-  function showProBadge(){
-    if (!proBadge) return;
-    const p = getPro();
-    if (p.active){
-      const d = new Date(p.exp);
-      proBadge.textContent = `Pro active. Renews on ${d.toISOString().slice(0,10)}`;
-    } else {
-      proBadge.textContent = `Free plan`;
-    }
-  }
-
-  function requirePro(action){
-    const p = getPro();
-    if (p.active) return true;
-    alert('Pro only. Go to Pricing to upgrade.');
-    try{ window.location.href = '/pricing.html'; }catch{}
-    return false;
   }
 
   form.addEventListener('submit', onSearchSubmit);
@@ -90,8 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (titleEl) titleEl.textContent = q;
     if (freshnessEl) freshnessEl.textContent = 'Fetching...';
     if (coverageEl) coverageEl.textContent = `Region: ${geo}`;
-
-    paintSkeletons();
+    if (spikesEl) spikesEl.innerHTML = 'Loading...';
+    if (sourcesEl) sourcesEl.innerHTML = '';
 
     try {
       const r = await fetch(`/api/trend?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`);
@@ -116,14 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
       updateShareLinks(q, geo);
       pushHistory({ q, geo });
       renderHistory();
-      if (alertQ) alertQ.value = lastQuery;
-      if (alertGeo) alertGeo.value = lastGeo;
-      if (ogBtn) ogBtn.onclick = openShareImage;
       track('search', { q, geo });
       console.log('Search success', { q, geo });
     } catch (err) {
       if (spikesEl) spikesEl.innerHTML = 'Failed to load';
-      if (sourcesEl) sourcesEl.innerHTML = 'Failed to load';
       console.error(err);
     }
   }
@@ -145,13 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
       options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { suggestedMax: 100, grid: { color: '#1a1a1a' } } } }
     });
   }
-function openShareImage(){
-  if (!lastTimeline.length) return;
-  const labels = lastTimeline.map(p => p.t.slice(5)).join(",");
-  const values = lastTimeline.map(p => p.v).join(",");
-  const u = `/api/og?q=${encodeURIComponent(lastQuery)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
-  window.open(u, "_blank", "noopener");
-}
 
   function renderSpikes(spikes){
     if (!spikesEl) return;
@@ -280,12 +236,8 @@ function openShareImage(){
         setTimeout(() => copyLinkBtn.textContent = 'Copy link', 1500);
       } catch {}
     };
-    if (csvBtn) csvBtn.onclick = () => { if (requirePro('csv')) downloadCSV(); };
-    if (pngBtn) pngBtn.onclick = () => { if (requirePro('png')) downloadPNG(); };
-    if (alertForm) alertForm.onsubmit = (e) => {
-      if (!requirePro('alerts')) { e.preventDefault(); return false; }
-      return true;
-    };
+    if (csvBtn) csvBtn.onclick = downloadCSV;
+    if (ogBtn) ogBtn.onclick = openShareImage;
     if (shareX) shareX.href = `https://x.com/intent/tweet?text=${encodeURIComponent(q)}&url=${encodeURIComponent(url)}`;
     if (shareTT) shareTT.href = `https://www.tiktok.com/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(q)}`;
     if (shareYT) shareYT.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
@@ -305,16 +257,12 @@ function openShareImage(){
     track('csv_download', { q: lastQuery, geo: lastGeo });
   }
 
-  function downloadPNG(){
-    const canvas = document.getElementById('chart');
-    if (!canvas) return;
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/png');
-    a.download = `${lastQuery}_${lastGeo}_trend.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    track('png_download', { q: lastQuery, geo: lastGeo });
+  function openShareImage(){
+    if (!lastTimeline.length) return;
+    const labels = lastTimeline.map(p => p.t.slice(5)).join(",");
+    const values = lastTimeline.map(p => p.v).join(",");
+    const u = `/api/og?q=${encodeURIComponent(lastQuery)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
+    window.open(u, "_blank", "noopener");
   }
 
   function initFromURL(){
@@ -329,19 +277,14 @@ function openShareImage(){
     } else {
       loadTrending();
     }
-    showProBadge();
   }
 
-  function getSaved(){
-    try{ return JSON.parse(localStorage.getItem('tp_saved') || '[]'); }catch{return[]}
-  }
-  function setSaved(list){
-    localStorage.setItem('tp_saved', JSON.stringify(list.slice(0,30)));
-  }
+  // Saved and recent remain unchanged below...
+  function getSaved(){ try{ return JSON.parse(localStorage.getItem('tp_saved') || '[]'); }catch{return[]} }
+  function setSaved(list){ localStorage.setItem('tp_saved', JSON.stringify(list.slice(0,30))); }
   function renderSaved(){
     if(!savedBox) return;
     const list = getSaved();
-    if(!list.length){ savedBox.innerHTML = ''; return; }
     savedBox.innerHTML = '';
     list.forEach(({q,geo}, idx) => {
       const chip = document.createElement('div');
@@ -382,12 +325,8 @@ function openShareImage(){
   if (saveBtn) saveBtn.addEventListener('click', saveCurrent);
   renderSaved();
 
-  function getHistory(){
-    try{ return JSON.parse(localStorage.getItem('tp_recent') || '[]'); }catch{return[]}
-  }
-  function setHistory(list){
-    localStorage.setItem('tp_recent', JSON.stringify(list.slice(0,15)));
-  }
+  function getHistory(){ try{ return JSON.parse(localStorage.getItem('tp_recent') || '[]'); }catch{return[]} }
+  function setHistory(list){ localStorage.setItem('tp_recent', JSON.stringify(list.slice(0,15))); }
   function pushHistory(item){
     const list = getHistory().filter(x => !(x.q.toLowerCase() === item.q.toLowerCase() && x.geo === item.geo));
     list.unshift(item);
@@ -429,12 +368,6 @@ function openShareImage(){
   if (welcomeOk) welcomeOk.addEventListener('click', hideWelcome);
   if (welcomeHide) welcomeHide.addEventListener('click', hideWelcome);
 
-  if (alertForm) {
-    alertForm.addEventListener('submit', () => {
-      setTimeout(() => { alert('Subscribed for spike alerts'); }, 100);
-    });
-  }
-
   initFromURL();
   const gs = document.getElementById('geo');
   if (gs) gs.addEventListener('change', loadTrending);
@@ -443,26 +376,3 @@ function openShareImage(){
 
   console.log('TrendPeak app ready');
 });
-
-function paintSkeletons(){
-  const spikes = document.getElementById('spikes');
-  const sources = document.getElementById('sources');
-  if (spikes){
-    spikes.innerHTML = '';
-    for(let i=0;i<3;i++){
-      const div = document.createElement('div');
-      div.className = 'card';
-      div.innerHTML = `<div class="skel skel-row" style="width:60%"></div><div class="skel skel-row" style="width:40%"></div>`;
-      spikes.appendChild(div);
-    }
-  }
-  if (sources){
-    sources.innerHTML = '';
-    for(let i=0;i<5;i++){
-      const div = document.createElement('div');
-      div.className = 'source';
-      div.innerHTML = `<div class="skel skel-row" style="width:${50 + i*8}%"></div>`;
-      sources.appendChild(div);
-    }
-  }
-}
