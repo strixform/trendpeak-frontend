@@ -88,6 +88,13 @@ const sharePageBtn = document.getElementById('sharePageBtn');
       renderHistory();
       track('search', { q, geo });
       console.log('Search success', { q, geo });
+      if (pngBtn) pngBtn.onclick = downloadPNG;
+if (sharePageBtn) {
+  const labels = lastTimeline.map(p => p.t.slice(5)).join(",");
+  const values = lastTimeline.map(p => p.v).join(",");
+  sharePageBtn.href = `/share.html?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
+}
+
     } catch (err) {
       if (spikesEl) spikesEl.innerHTML = 'Failed to load';
       console.error(err);
