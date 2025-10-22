@@ -398,4 +398,20 @@ function downloadPNG(){
   showWelcomeOnce();
 
   console.log('TrendPeak app ready');
+  function isPro(){
+  try { return localStorage.getItem('tp_pro') === '1'; }
+  catch { return false; }
+}
+
+function showProModal(){
+  if (!proModal) return;
+  proModal.classList.remove('hide');
+}
+
+function hideProModal(){
+  if (!proModal) return;
+  proModal.classList.add('hide');
+}
+
+if (proClose) proClose.addEventListener('click', hideProModal);
 });
