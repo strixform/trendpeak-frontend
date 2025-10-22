@@ -189,5 +189,18 @@ select{
   100%{background-position: 0% 50%}
 }
 .skel-row{height:12px;margin:6px 0}
+.badge-pro{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  background:#ffd54f;
+  color:#1a1a1a;
+  font-size:12px;
+  font-weight:600;
+  margin-right:8px;
+  vertical-align:middle;
+}
+.badge-pro.hide{ display:none; }
+
 
 
