@@ -2,7 +2,7 @@ console.log('TrendPeak app loading');
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM ready');
-
+  const ogBtn = document.getElementById('ogBtn');
   const form = document.getElementById('searchForm');
   const qEl = document.getElementById('q');
   const resEl = document.getElementById('result');
@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderHistory();
       if (alertQ) alertQ.value = lastQuery;
       if (alertGeo) alertGeo.value = lastGeo;
+      if (ogBtn) ogBtn.onclick = openShareImage;
       track('search', { q, geo });
       console.log('Search success', { q, geo });
     } catch (err) {
@@ -144,6 +145,13 @@ document.addEventListener('DOMContentLoaded', () => {
       options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { suggestedMax: 100, grid: { color: '#1a1a1a' } } } }
     });
   }
+function openShareImage(){
+  if (!lastTimeline.length) return;
+  const labels = lastTimeline.map(p => p.t.slice(5)).join(",");
+  const values = lastTimeline.map(p => p.v).join(",");
+  const u = `/api/og?q=${encodeURIComponent(lastQuery)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
+  window.open(u, "_blank", "noopener");
+}
 
   function renderSpikes(spikes){
     if (!spikesEl) return;
