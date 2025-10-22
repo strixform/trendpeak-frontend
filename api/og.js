@@ -15,12 +15,10 @@ export default async function handler(req){
     const labels = (searchParams.get("labels") || "").split(",").filter(Boolean).slice(-30);
     const values = (searchParams.get("values") || "").split(",").map(Number).filter(x => !Number.isNaN(x)).slice(-30);
 
-    // basic guard
     if (labels.length !== values.length || !labels.length){
       return new Response("Bad params", { status: 400, headers: { "content-type": "text/plain" } });
     }
 
-    // QuickChart config
     const cfg = {
       type: "line",
       data: {
@@ -43,9 +41,8 @@ export default async function handler(req){
     })}`;
 
     const r = await fetch(url);
-    if (!r.ok) {
-      return new Response("Upstream error", { status: 502, headers: { "content-type": "text/plain" } });
-    }
+    if (!r.ok) return new Response("Upstream error", { status: 502 });
+
     const buf = await r.arrayBuffer();
     return new Response(buf, {
       status: 200,
@@ -55,6 +52,6 @@ export default async function handler(req){
       }
     });
   } catch {
-    return new Response("Error", { status: 500, headers: { "content-type": "text/plain" } });
+    return new Response("Error", { status: 500 });
   }
 }
