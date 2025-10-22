@@ -14,9 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const yrEl = document.getElementById('yr');
 
   const copyLinkBtn = document.getElementById('copyLinkBtn');
-  const csvBtn = document.getElementById('csvBtn');           // Pro
-  const pngBtn = document.getElementById('pngBtn');           // Free
-  const ogBtn = document.getElementById('ogBtn');             // Pro
+  const csvBtn = document.getElementById('csvBtn');     // Pro
+  const pngBtn = document.getElementById('pngBtn');     // Free
+  const ogBtn = document.getElementById('ogBtn');       // Pro
   const shareX = document.getElementById('shareX');
   const shareTT = document.getElementById('shareTT');
   const shareYT = document.getElementById('shareYT');
@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const proModal = document.getElementById('proModal');
   const proClose = document.getElementById('proClose');
+  const proBadge = document.getElementById('proBadge');
 
   if (yrEl) yrEl.textContent = new Date().getFullYear();
 
@@ -43,15 +44,25 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastGeo = 'NG';
 
   function track(name, props){
-    try { if (window.plausible) window.plausible(name, { props }); } catch {}
+    try{ if(window.plausible) window.plausible(name, { props }); }catch{}
   }
 
   function isPro(){
-    try { return localStorage.getItem('tp_pro') === '1'; } catch { return false; }
+    try { return localStorage.getItem('tp_pro') === '1'; }
+    catch { return false; }
+  }
+  function updateProUI(){
+    const pro = isPro();
+    if (proBadge){
+      if (pro){ proBadge.classList.remove('hide'); proBadge.textContent = 'Pro'; }
+      else { proBadge.classList.add('hide'); }
+    }
   }
   function showProModal(){ if (proModal) proModal.classList.remove('hide'); }
   function hideProModal(){ if (proModal) proModal.classList.add('hide'); }
   if (proClose) proClose.addEventListener('click', hideProModal);
+
+  updateProUI();
 
   form.addEventListener('submit', onSearchSubmit);
 
@@ -72,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (spikesEl) spikesEl.innerHTML = 'Loading...';
     if (sourcesEl) sourcesEl.innerHTML = '';
 
-    // show or hide alert block by Pro state
     const alertWrap = document.getElementById('alertWrap');
     if (alertWrap) alertWrap.style.display = isPro() ? 'block' : 'none';
     const alert_q = document.getElementById('alert_q');
@@ -103,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateShareLinks(q, geo);
       pushHistory({ q, geo });
       renderHistory();
+      updateProUI();
       track('search', { q, geo });
       console.log('Search success', { q, geo });
     } catch (err) {
@@ -419,6 +430,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (gs) gs.addEventListener('change', loadTrending);
   renderHistory();
   showWelcomeOnce();
+
+  // helpers for testing
+  window.tpSetPro = v => {
+    if (v){ localStorage.setItem('tp_pro','1'); }
+    else { localStorage.removeItem('tp_pro'); }
+    updateProUI();
+  };
 
   console.log('TrendPeak app ready');
 });
