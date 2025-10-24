@@ -6,21 +6,26 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
+
   <meta property="og:title" content="TrendPeak">
-<meta property="og:description" content="Search any topic. See the rise, spikes, regions, and sources.">
-<meta property="og:url" content="https://trendpeak.io/">
-<meta property="og:type" content="website">
-<meta property="og:image" content="https://trendpeak.io/favicon.svg">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="TrendPeak">
-<meta name="twitter:description" content="Search any topic. See the rise, spikes, regions, and sources.">
-<meta name="twitter:image" content="https://trendpeak.io/favicon.svg">
+  <meta property="og:description" content="Search any topic. See the rise, spikes, regions, and sources.">
+  <meta property="og:url" content="https://trendpeak.io/">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://trendpeak.io/favicon.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TrendPeak">
+  <meta name="twitter:description" content="Search any topic. See the rise, spikes, regions, and sources.">
+  <meta name="twitter:image" content="https://trendpeak.io/favicon.svg">
+
   <script defer data-domain="trendpeak.io" src="https://plausible.io/js/script.js"></script>
 </head>
 <body>
   <div class="wrap">
     <header class="top">
-      <div class="brand"><div class="logo"></div><h1>TrendPeak</h1></div>
+      <div class="brand">
+        <div class="logo"></div>
+        <h1>TrendPeak</h1>
+      </div>
       <nav class="nav">
         <a href="/index.html">Home</a>
         <a href="/pricing.html">Pricing</a>
@@ -34,15 +39,19 @@
       <section class="cards">
         <div class="card">
           <strong>Free</strong>
-          <div class="small">30 day timeline. NG region. Basic sources.</div>
-          <div class="small">Price: 0</div>
+          <div class="small">30-day timeline. NG region. Basic sources.</div>
+          <div class="small">Price: Free</div>
+          <div style="margin-top:8px">
+            <a class="link" href="/index.html">Start free</a>
+          </div>
         </div>
+
         <div class="card">
           <strong>Pro</strong>
-          <div class="small">12 months history. All regions. Email alerts. CSV export. More sources.</div>
+          <div class="small">12-month history. All regions. Email alerts. CSV export. More sources.</div>
           <div class="small">Price: ₦4,000 monthly</div>
           <div style="margin-top:8px">
-            <a class="link" id="payBtn" href="#" target="_blank" rel="noopener">Pay with Flutterwave</a>
+            <a class="link" href="#" onclick="localStorage.setItem('tp_pro','1'); location.href='/'; return false;">Subscribe</a>
           </div>
         </div>
       </section>
@@ -57,11 +66,8 @@
     </footer>
   </div>
 
- <script>
-  document.getElementById('yr').textContent = new Date().getFullYear();
-  const pay = document.getElementById('payBtn');
-  pay.href = "https://flutterwave.com/pay/your-payment-link?redirect_url=https%3A%2F%2Ftrendpeak.io%2Fpro.html%3Fsuccess%3D1%26days%3D30";
-</script>
-
+  <script>
+    document.getElementById('yr').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
