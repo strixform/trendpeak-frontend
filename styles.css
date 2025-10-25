@@ -213,6 +213,10 @@ select{
   vertical-align:middle;
 }
 .badge-pro.hide{ display:none; }
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #222;border-radius:10px;padding:10px 14px;font-size:14px}
+.toast.hide{display:none}
+.small.muted{opacity:.7}
+.btn-wait[disabled]{opacity:.6;cursor:not-allowed}
 
 
 
