@@ -14,9 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const yrEl = document.getElementById('yr');
 
   const copyLinkBtn = document.getElementById('copyLinkBtn');
-  const csvBtn = document.getElementById('csvBtn');     // Pro
-  const pngBtn = document.getElementById('pngBtn');     // Free
-  const ogBtn = document.getElementById('ogBtn');       // Pro
+  const csvBtn = document.getElementById('csvBtn');
+  const pngBtn = document.getElementById('pngBtn');
+  const ogBtn = document.getElementById('ogBtn');
   const shareX = document.getElementById('shareX');
   const shareTT = document.getElementById('shareTT');
   const shareYT = document.getElementById('shareYT');
@@ -30,6 +30,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const proModal = document.getElementById('proModal');
   const proClose = document.getElementById('proClose');
   const proBadge = document.getElementById('proBadge');
+
+  const alertForm = document.getElementById('alertForm');
+  const alertBtn = document.getElementById('alertBtn');
+  const alertStatus = document.getElementById('alertStatus');
+  const toast = document.getElementById('toast');
+
+  const FORMSPREE_URL = 'https://formspree.io/f/your-form-id'; // replace
 
   if (yrEl) yrEl.textContent = new Date().getFullYear();
 
@@ -61,6 +68,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function showProModal(){ if (proModal) proModal.classList.remove('hide'); }
   function hideProModal(){ if (proModal) proModal.classList.add('hide'); }
   if (proClose) proClose.addEventListener('click', hideProModal);
+
+  function showToast(msg){
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.remove('hide');
+    setTimeout(() => toast.classList.add('hide'), 2000);
+  }
 
   updateProUI();
 
@@ -268,10 +282,10 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch {}
     };
 
-    if (pngBtn) pngBtn.onclick = downloadPNG; // free
+    if (pngBtn) pngBtn.onclick = downloadPNG;
 
-    if (csvBtn) csvBtn.onclick = () => { isPro() ? downloadCSV() : showProModal(); }; // pro
-    if (ogBtn) ogBtn.onclick = () => { isPro() ? openShareImage() : showProModal(); }; // pro
+    if (csvBtn) csvBtn.onclick = () => { isPro() ? downloadCSV() : showProModal(); };
+    if (ogBtn) ogBtn.onclick = () => { isPro() ? openShareImage() : showProModal(); };
 
     if (shareX) shareX.href = `https://x.com/intent/tweet?text=${encodeURIComponent(q)}&url=${encodeURIComponent(url)}`;
     if (shareTT) shareTT.href = `https://www.tiktok.com/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(q)}`;
@@ -320,6 +334,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const values = lastTimeline.map(p => p.v).join(',');
     const u = `${base}/api/og?q=${encodeURIComponent(lastQuery)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
     window.open(u, '_blank', 'noopener');
+  }
+
+  // Formspree AJAX submit for alerts
+  if (alertForm){
+    alertForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!isPro()){ showProModal(); return; }
+      const fd = new FormData(alertForm);
+      fd.append('_subject', 'TrendPeak spike alert');
+      fd.append('_template', 'table');
+      try{
+        if (alertBtn){ alertBtn.disabled = true; alertBtn.textContent = 'Submitting...'; }
+        if (alertStatus) alertStatus.textContent = 'Submitting...';
+        const r = await fetch(FORMSPREE_URL, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' },
+          body: fd
+        });
+        if (!r.ok) throw new Error('Submit failed');
+        if (alertStatus) alertStatus.textContent = 'Subscribed. Check your email for confirmation.';
+        showToast('Alert subscribed');
+        if (alertBtn){ alertBtn.disabled = false; alertBtn.textContent = 'Subscribe'; }
+        track('alert_subscribe', { q: lastQuery, geo: lastGeo });
+      } catch {
+        if (alertStatus) alertStatus.textContent = 'Failed to subscribe. Try again.';
+        showToast('Failed to subscribe');
+        if (alertBtn){ alertBtn.disabled = false; alertBtn.textContent = 'Subscribe'; }
+      }
+    });
   }
 
   function initFromURL(){
@@ -431,7 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHistory();
   showWelcomeOnce();
 
-  // helpers for testing
   window.tpSetPro = v => {
     if (v){ localStorage.setItem('tp_pro','1'); }
     else { localStorage.removeItem('tp_pro'); }
