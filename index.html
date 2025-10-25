@@ -83,22 +83,22 @@
             <button id="pngBtn">Download PNG</button>
             <button id="ogBtn">Share image</button>
             <a id="sharePageBtn" href="#" target="_blank" rel="noopener">Share page</a>
-            <span id="freshness" class="meta-right"></span>
-            <span id="coverage" class="meta-right"></span>
           </div>
+          <span id="freshness"></span>
+          <span id="coverage"></span>
         </div>
 
         <canvas id="chart" height="120"></canvas>
 
         <div id="alertWrap" class="card" style="margin-top:12px">
           <strong>Get spike alerts by email</strong>
-          <form id="alertForm" action="https://formspree.io/f/your-form-id" method="POST" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <form id="alertForm" method="POST" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
             <input type="email" name="email" placeholder="you@email.com" required>
             <input type="hidden" name="q" id="alert_q">
             <input type="hidden" name="geo" id="alert_geo">
-            <button type="submit">Subscribe</button>
+            <button type="submit" id="alertBtn" class="btn-wait">Subscribe</button>
           </form>
-          <div class="small">We email you when this term spikes. You can unsubscribe anytime.</div>
+          <div id="alertStatus" class="small muted" style="margin-top:6px"></div>
         </div>
 
         <div id="insights">
@@ -144,7 +144,9 @@
     </div>
   </div>
 
+  <div id="toast" class="toast hide"></div>
+
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script defer src="/app.js?v=13"></script>
+  <script defer src="/app.js?v=14"></script>
 </body>
 </html>
