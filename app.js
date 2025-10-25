@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const alertStatus = document.getElementById('alertStatus');
   const toast = document.getElementById('toast');
 
-  const FORMSPREE_URL = 'https://formspree.io/f/your-form-id'; // replace
+  const FORMSPREE_URL = 'https://formspree.io/f/mnngraqk';
 
   if (yrEl) yrEl.textContent = new Date().getFullYear();
 
