@@ -286,6 +286,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = await fetch('/api/top?geo=' + encodeURIComponent(geo));
       const data = await r.json();
       renderTrending(data.top || []);
+      if (data.top && data.top.length) {
+  startTicker(data.top.map(t => t.title));
+}
     } catch {
       box.innerHTML = 'Failed to load';
     }
@@ -523,6 +526,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.tpSetPro = days => { setPro(days || 30); updateProUI(); };
   window.tpClearPro = () => { clearPro(); updateProUI(); };
+function startTicker(list){
+  const wrap = document.getElementById('trendTicker');
+  const item = document.getElementById('tickerItem');
+  if (!wrap || !item) return;
+  if (!list.length){ wrap.classList.add('hide'); return; }
+  wrap.classList.remove('hide');
+  let idx = 0;
+  function showNext(){
+    item.textContent = list[idx];
+    idx = (idx + 1) % list.length;
+  }
+  showNext();
+  setInterval(showNext, 5000);
+}
 
   console.log('TrendPeak app ready');
 });
