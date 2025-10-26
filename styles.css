@@ -246,6 +246,25 @@ select{
 .toast.hide{display:none}
 .small.muted{opacity:.7}
 .btn-wait[disabled]{opacity:.6;cursor:not-allowed}
+.ticker{
+  margin-top:10px;
+  font-size:15px;
+  background:#0f0f0f;
+  border:1px solid #222;
+  border-radius:10px;
+  padding:8px 14px;
+  display:flex;
+  gap:6px;
+  align-items:center;
+  overflow:hidden;
+}
+.ticker.hide{display:none}
+#tickerLabel{color:#999;font-weight:600}
+#tickerItem{white-space:nowrap;animation:tickerSlide 20s linear infinite}
+@keyframes tickerSlide{
+  from{transform:translateX(100%)}
+  to{transform:translateX(-100%)}
+}
 
 
 
