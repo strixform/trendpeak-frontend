@@ -4,23 +4,22 @@
   <meta charset="utf-8">
   <title>Top Rising • TrendPeak</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Top rising searches today.">
-  <meta property="og:title" content="TrendPeak">
-  <meta property="og:description" content="Search any topic. See the rise, spikes, regions, and sources.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:title" content="Top Rising • TrendPeak">
+  <meta property="og:description" content="Live list of trending topics around the world.">
   <meta property="og:url" content="https://trendpeak.io/top.html">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://trendpeak.io/favicon.svg">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="TrendPeak">
-  <meta name="twitter:description" content="Search any topic. See the rise, spikes, regions, and sources.">
-  <meta name="twitter:image" content="https://trendpeak.io/favicon.svg">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/styles.css">
+  <script defer data-domain="trendpeak.io" src="https://plausible.io/js/script.js"></script>
 </head>
 <body>
   <div class="wrap">
     <header class="top">
-      <div class="brand"><div class="logo"></div><h1>TrendPeak</h1></div>
+      <div class="brand">
+        <div class="logo"></div>
+        <h1>TrendPeak</h1>
+      </div>
       <nav class="nav">
         <a href="/index.html">Home</a>
         <a href="/top.html">Top rising</a>
@@ -28,22 +27,24 @@
         <a href="/about.html">About</a>
         <a href="/contact.html">Contact</a>
       </nav>
-      <p class="tag">Top rising today</p>
+      <p class="tag">Live snapshot of what’s trending now.</p>
     </header>
 
     <main>
-      <div class="card">
-        <strong>Region</strong>
-        <select id="geo" style="margin-left:8px">
+      <div style="margin-bottom:14px; display:flex; gap:8px; flex-wrap:wrap;">
+        <select id="geo">
           <option value="NG" selected>NG</option>
           <option value="US">US</option>
           <option value="GB">GB</option>
           <option value="GH">GH</option>
           <option value="ZA">ZA</option>
+          <option value="KE">KE</option>
+          <option value="CA">CA</option>
         </select>
+        <button id="reloadBtn">Reload</button>
       </div>
 
-      <section class="cards" id="list" style="margin-top:12px"></section>
+      <div id="topList" class="cards">Loading...</div>
     </main>
 
     <footer>
@@ -58,36 +59,49 @@
   <script>
     document.getElementById('yr').textContent = new Date().getFullYear();
 
-    const box = document.getElementById('list');
-    const geoSel = document.getElementById('geo');
-
-    async function loadTop(){
-      box.innerHTML = 'Loading...';
-      try{
-        const r = await fetch(`/api/top?geo=${encodeURIComponent(geoSel.value)}`);
+    async function loadTop() {
+      const geoSel = document.getElementById('geo');
+      const geo = geoSel ? geoSel.value : 'NG';
+      const list = document.getElementById('topList');
+      list.innerHTML = 'Loading...';
+      try {
+        const r = await fetch(`/api/top?geo=${encodeURIComponent(geo)}`);
+        if (!r.ok) throw new Error('API error');
         const data = await r.json();
-        const items = data.top || [];
-        if (!items.length){ box.innerHTML = 'No data'; return; }
-        box.innerHTML = '';
-        items.forEach(it => {
-          const card = document.createElement('div');
-          card.className = 'card';
-          const related = it.related && it.related.length ? `<div class="small">${it.related.join(' • ')}</div>` : '';
-          const links = it.articles && it.articles.length
-            ? it.articles.map(a => `<div class="small"><a href="${a.url}" target="_blank" rel="noopener">${a.title}</a></div>`).join('')
-            : '';
-          card.innerHTML = `<strong>${it.title}</strong>${related}${links}`;
-          card.addEventListener('click', () => {
-            location.href = `/index.html?q=${encodeURIComponent(it.title)}&geo=${encodeURIComponent(geoSel.value)}`;
-          });
-          box.appendChild(card);
-        });
-      } catch {
-        box.innerHTML = 'Failed to load';
+        renderTop(data.top || []);
+      } catch (err) {
+        console.error(err);
+        list.innerHTML = 'Failed to load trending data.';
       }
     }
 
-    geoSel.addEventListener('change', loadTop);
+    function renderTop(items) {
+      const list = document.getElementById('topList');
+      list.innerHTML = '';
+      if (!items.length) {
+        list.innerHTML = 'No trending data available right now.';
+        return;
+      }
+
+      items.forEach(i => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        const related = i.related?.length ? `<div class="small">${i.related.join(' • ')}</div>` : '';
+        const article = i.articles?.length ? `<div class="small"><a href="${i.articles[0].url}" target="_blank" rel="noopener">Read more</a></div>` : '';
+        div.innerHTML = `
+          <strong>${i.title}</strong>
+          ${related}
+          ${article}
+        `;
+        div.addEventListener('click', () => {
+          window.location.href = \`/index.html?q=\${encodeURIComponent(i.title)}&geo=\${encodeURIComponent(document.getElementById('geo').value)}\`;
+        });
+        list.appendChild(div);
+      });
+    }
+
+    document.getElementById('reloadBtn').addEventListener('click', loadTop);
+    document.getElementById('geo').addEventListener('change', loadTop);
     loadTop();
   </script>
 </body>
