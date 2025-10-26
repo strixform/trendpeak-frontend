@@ -30,13 +30,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const proModal = document.getElementById('proModal');
   const proClose = document.getElementById('proClose');
   const proBadge = document.getElementById('proBadge');
+  const upgradeBar = document.getElementById('upgradeBar');
+  const upgradeMsg = document.getElementById('upgradeMsg');
 
   const alertForm = document.getElementById('alertForm');
   const alertBtn = document.getElementById('alertBtn');
   const alertStatus = document.getElementById('alertStatus');
   const toast = document.getElementById('toast');
 
-  const FORMSPREE_URL = 'https://formspree.io/f/mnngraqk';
+  const FORMSPREE_URL = 'https://formspree.io/f/your-form-id';
 
   if (yrEl) yrEl.textContent = new Date().getFullYear();
 
@@ -54,17 +56,68 @@ document.addEventListener('DOMContentLoaded', () => {
     try{ if(window.plausible) window.plausible(name, { props }); }catch{}
   }
 
-  function isPro(){
-    try { return localStorage.getItem('tp_pro') === '1'; }
-    catch { return false; }
+  function nowUtc(){
+    return new Date().toISOString();
   }
+  function daysFromNow(n){
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    return d.toISOString();
+  }
+
+  function getProExpiry(){
+    try{ return localStorage.getItem('tp_pro_expiry') || ''; }catch{ return '' }
+  }
+  function isProActive(){
+    const exp = getProExpiry();
+    if (!exp) return false;
+    return new Date(exp).getTime() > Date.now();
+  }
+  function setPro(days){
+    try{
+      localStorage.setItem('tp_pro', '1');
+      localStorage.setItem('tp_pro_since', nowUtc());
+      localStorage.setItem('tp_pro_expiry', daysFromNow(days));
+    }catch{}
+  }
+  function clearPro(){
+    try{
+      localStorage.removeItem('tp_pro');
+      localStorage.removeItem('tp_pro_since');
+      localStorage.removeItem('tp_pro_expiry');
+    }catch{}
+  }
+
+  function isPro(){
+    return isProActive();
+  }
+
   function updateProUI(){
-    const pro = isPro();
+    const pro = isProActive();
+    const exp = getProExpiry();
     if (proBadge){
       if (pro){ proBadge.classList.remove('hide'); proBadge.textContent = 'Pro'; }
       else { proBadge.classList.add('hide'); }
     }
+    if (upgradeBar && upgradeMsg){
+      if (!exp){
+        upgradeBar.classList.add('hide');
+      } else {
+        const msLeft = new Date(exp).getTime() - Date.now();
+        const daysLeft = Math.max(0, Math.ceil(msLeft / 86400000));
+        if (!pro){
+          upgradeMsg.textContent = 'Your Pro has expired. Upgrade to continue Pro features.';
+          upgradeBar.classList.remove('hide');
+        } else if (daysLeft <= 5){
+          upgradeMsg.textContent = 'Pro expires in ' + daysLeft + ' days. Renew to keep access.';
+          upgradeBar.classList.remove('hide');
+        } else {
+          upgradeBar.classList.add('hide');
+        }
+      }
+    }
   }
+
   function showProModal(){ if (proModal) proModal.classList.remove('hide'); }
   function hideProModal(){ if (proModal) proModal.classList.add('hide'); }
   if (proClose) proClose.addEventListener('click', hideProModal);
@@ -93,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resEl.classList.remove('hide');
     if (titleEl) titleEl.textContent = q;
     if (freshnessEl) freshnessEl.textContent = 'Fetching...';
-    if (coverageEl) coverageEl.textContent = `Region: ${geo}`;
+    if (coverageEl) coverageEl.textContent = 'Region: ' + geo;
     if (spikesEl) spikesEl.innerHTML = 'Loading...';
     if (sourcesEl) sourcesEl.innerHTML = '';
 
@@ -105,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (alert_geo) alert_geo.value = geo;
 
     try {
-      const r = await fetch(`/api/trend?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`);
+      const r = await fetch('/api/trend?q=' + encodeURIComponent(q) + '&geo=' + encodeURIComponent(geo));
       if (!r.ok) throw new Error('API error');
       const data = await r.json();
 
@@ -161,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     spikes.forEach(s => {
       const d = document.createElement('div');
       d.className = 'card';
-      d.innerHTML = `<strong>${s.time}</strong><div class="small">+${s.percent}% vs baseline</div><div class="small">${s.reason}</div>`;
+      d.innerHTML = '<strong>' + s.time + '</strong><div class="small">+' + s.percent + '% vs baseline</div><div class="small">' + s.reason + '</div>';
       spikesEl.appendChild(d);
     });
   }
@@ -173,12 +226,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Array.isArray(regions) && regions.length){
       const box = document.createElement('div');
       box.className = 'card';
-      box.innerHTML = `<strong>Top regions</strong><div class="small">${regions.map(r => `${escapeHtml(r.name)} ${r.value}`).join(' • ')}</div>`;
+      box.innerHTML = '<strong>Top regions</strong><div class="small">' + regions.map(r => escapeHtml(r.name) + ' ' + r.value).join(' • ') + '</div>';
       sourcesEl.appendChild(box);
     }
 
     section('News', sources.news || [], i => row(i.site, i.title, i.url));
-    section('Reddit', sources.reddit || [], i => row(i.site, i.score ? `${i.title} • ${i.score}` : i.title, i.url));
+    section('Reddit', sources.reddit || [], i => row(i.site, i.score ? i.title + ' • ' + i.score : i.title, i.url));
     section('YouTube', sources.youtube || [], i => videoRow(i));
 
     if (explore && explore.length){
@@ -190,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const wrap = document.createElement('div');
       wrap.className = 'card';
-      wrap.innerHTML = explore.map(e => `<a href="${e.url}" target="_blank" rel="noopener" style="margin-right:12px">${escapeHtml(e.label)}</a>`).join('');
+      wrap.innerHTML = explore.map(e => '<a href="' + e.url + '" target="_blank" rel="noopener" style="margin-right:12px">' + escapeHtml(e.label) + '</a>').join('');
       sourcesEl.appendChild(wrap);
     }
   }
@@ -208,18 +261,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function row(site, title, url){
     const div = document.createElement('div');
     div.className = 'source';
-    div.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${escapeHtml(site || '')} • ${escapeHtml(title || '')}</a>`;
+    div.innerHTML = '<a href="' + url + '" target="_blank" rel="noopener">' + escapeHtml(site || '') + ' • ' + escapeHtml(title || '') + '</a>';
     return div;
   }
 
   function videoRow(item){
     const div = document.createElement('div');
     div.className = 'source';
-    div.innerHTML = `
-      <a href="${item.url}" target="_blank" rel="noopener">
-        ${item.thumbnail ? `<img src="${item.thumbnail}" alt="" style="width:72px;height:40px;object-fit:cover;border-radius:6px;margin-right:8px;vertical-align:middle">` : ''}
-        ${escapeHtml(item.title || '')}
-      </a>`;
+    div.innerHTML = '<a href="' + item.url + '" target="_blank" rel="noopener">' + (item.thumbnail ? '<img src="' + item.thumbnail + '" alt="" style="width:72px;height:40px;object-fit:cover;border-radius:6px;margin-right:8px;vertical-align:middle">' : '') + escapeHtml(item.title || '') + '</a>';
     return div;
   }
 
@@ -234,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!box) return;
     box.innerHTML = 'Loading...';
     try {
-      const r = await fetch(`/api/top?geo=${encodeURIComponent(geo)}`);
+      const r = await fetch('/api/top?geo=' + encodeURIComponent(geo));
       const data = await r.json();
       renderTrending(data.top || []);
     } catch {
@@ -250,13 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
     list.forEach(item => {
       const div = document.createElement('div');
       div.className = 'card';
-      const related = item.related && item.related.length ? `<div class="small">${item.related.join(' • ')}</div>` : '';
+      const related = item.related && item.related.length ? '<div class="small">' + item.related.join(' • ') + '</div>' : '';
       const links = item.articles && item.articles.length
-        ? item.articles.map(a => `<div class="small"><a href="${a.url}" target="_blank" rel="noopener">${escapeHtml(a.title || '')}</a></div>`).join('')
+        ? item.articles.map(a => '<div class="small"><a href="' + a.url + '" target="_blank" rel="noopener">' + escapeHtml(a.title || '') + '</a></div>').join('')
         : '';
-      div.innerHTML = `<strong>${escapeHtml(item.title || '')}</strong>${related}${links}`;
+      div.innerHTML = '<strong>' + escapeHtml(item.title || '') + '</strong>' + related + links;
       div.addEventListener('click', () => {
-        track('trending_click', { q: item.title || '', geo: (document.getElementById('geo') || {}).value || 'NG' });
         qEl.value = item.title || '';
         form.dispatchEvent(new Event('submit'));
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -269,11 +317,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(location.search);
     params.set('q', q);
     params.set('geo', geo);
-    history.replaceState(null, '', `?${params.toString()}`);
+    history.replaceState(null, '', '?' + params.toString());
   }
 
   function updateShareLinks(q, geo){
-    const url = `${location.origin}${location.pathname}?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}`;
+    const url = location.origin + location.pathname + '?q=' + encodeURIComponent(q) + '&geo=' + encodeURIComponent(geo);
     if (copyLinkBtn) copyLinkBtn.onclick = async () => {
       try {
         await navigator.clipboard.writeText(url);
@@ -287,25 +335,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (csvBtn) csvBtn.onclick = () => { isPro() ? downloadCSV() : showProModal(); };
     if (ogBtn) ogBtn.onclick = () => { isPro() ? openShareImage() : showProModal(); };
 
-    if (shareX) shareX.href = `https://x.com/intent/tweet?text=${encodeURIComponent(q)}&url=${encodeURIComponent(url)}`;
-    if (shareTT) shareTT.href = `https://www.tiktok.com/share?url=${encodeURIComponent(url)}&title=${encodeURIComponent(q)}`;
-    if (shareYT) shareYT.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+    if (shareX) shareX.href = 'https://x.com/intent/tweet?text=' + encodeURIComponent(q) + '&url=' + encodeURIComponent(url);
+    if (shareTT) shareTT.href = 'https://www.tiktok.com/share?url=' + encodeURIComponent(url) + '&title=' + encodeURIComponent(q);
+    if (shareYT) shareYT.href = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
 
     if (sharePageBtn) {
       const labels = lastTimeline.map(p => p.t.slice(5)).join(',');
       const values = lastTimeline.map(p => p.v).join(',');
-      sharePageBtn.href = `/share.html?q=${encodeURIComponent(q)}&geo=${encodeURIComponent(geo)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
+      sharePageBtn.href = '/share.html?q=' + encodeURIComponent(q) + '&geo=' + encodeURIComponent(geo) + '&labels=' + encodeURIComponent(labels) + '&values=' + encodeURIComponent(values);
     }
   }
 
   function downloadCSV(){
     if (!lastTimeline.length) return;
-    const rows = [['date','value'], ...lastTimeline.map(p => [p.t, String(p.v)])];
-    const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const rows = [['date','value']].concat(lastTimeline.map(p => [p.t, String(p.v)]));
+    const csv = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g,'""') + '"').join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${lastQuery}_${lastGeo}_trend.csv`;
+    a.download = lastQuery + '_' + lastGeo + '_trend.csv';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -318,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = canvas.toDataURL('image/png');
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${lastQuery}_${lastGeo}_trend.png`;
+    a.download = lastQuery + '_' + lastGeo + '_trend.png';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -332,11 +380,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const base = backend && backend.startsWith('http') ? backend : '';
     const labels = lastTimeline.map(p => p.t.slice(5)).join(',');
     const values = lastTimeline.map(p => p.v).join(',');
-    const u = `${base}/api/og?q=${encodeURIComponent(lastQuery)}&labels=${encodeURIComponent(labels)}&values=${encodeURIComponent(values)}`;
+    const u = base + '/api/og?q=' + encodeURIComponent(lastQuery) + '&labels=' + encodeURIComponent(labels) + '&values=' + encodeURIComponent(values);
     window.open(u, '_blank', 'noopener');
   }
 
-  // Formspree AJAX submit for alerts
   if (alertForm){
     alertForm.addEventListener('submit', async e => {
       e.preventDefault();
@@ -389,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
     list.forEach(({q,geo}, idx) => {
       const chip = document.createElement('div');
       chip.className = 'chip';
-      chip.innerHTML = `<span>${escapeHtml(q)} · ${geo}</span><button class="x" title="Remove">×</button>`;
+      chip.innerHTML = '<span>' + escapeHtml(q) + ' · ' + geo + '</span><button class="x" title="Remove">×</button>';
       chip.addEventListener('click', e => {
         if(e.target.classList.contains('x')) return;
         qEl.value = q;
@@ -439,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
     list.forEach(({q,geo}) => {
       const chip = document.createElement('div');
       chip.className = 'chip';
-      chip.textContent = `${q} · ${geo}`;
+      chip.textContent = q + ' · ' + geo;
       chip.addEventListener('click', () => {
         qEl.value = q;
         const gs = document.getElementById('geo');
@@ -474,11 +521,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHistory();
   showWelcomeOnce();
 
-  window.tpSetPro = v => {
-    if (v){ localStorage.setItem('tp_pro','1'); }
-    else { localStorage.removeItem('tp_pro'); }
-    updateProUI();
-  };
+  window.tpSetPro = days => { setPro(days || 30); updateProUI(); };
+  window.tpClearPro = () => { clearPro(); updateProUI(); };
 
   console.log('TrendPeak app ready');
 });
