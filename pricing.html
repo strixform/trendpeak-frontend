@@ -6,16 +6,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
-  <meta property="og:title" content="TrendPeak">
-  <meta property="og:description" content="Search any topic. See the rise, spikes, regions, and sources.">
-  <meta property="og:url" content="https://trendpeak.io/">
-  <meta property="og:type" content="website">
-  <meta property="og:image" content="https://trendpeak.io/favicon.svg">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="TrendPeak">
-  <meta name="twitter:description" content="Search any topic. See the rise, spikes, regions, and sources.">
-  <meta name="twitter:image" content="https://trendpeak.io/favicon.svg">
-  <script defer data-domain="trendpeak.io" src="https://plausible.io/js/script.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -44,9 +34,11 @@
           <strong>Pro</strong>
           <div class="small">12 months history. All regions. Email alerts. CSV export. More sources.</div>
           <div class="small">Price: ₦4,000 monthly</div>
-          <div style="margin-top:8px">
-            <a class="link" href="#" onclick="localStorage.setItem('tp_pro','1'); localStorage.setItem('tp_pro_since', new Date().toISOString()); localStorage.setItem('tp_pro_expiry', (d=>{d.setDate(d.getDate()+30);return d.toISOString()})(new Date())); location.href='/'; return false;">Subscribe</a>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <input id="proEmail" type="email" placeholder="you@email.com" required>
+            <a id="payBtn" class="link" href="#" target="_blank" rel="noopener">Subscribe</a>
           </div>
+          <div class="small muted" style="margin-top:6px">We use your email to apply Pro to your account.</div>
         </div>
       </section>
     </main>
@@ -59,6 +51,24 @@
       </div>
     </footer>
   </div>
-  <script>document.getElementById('yr').textContent = new Date().getFullYear()</script>
+  <script>
+    document.getElementById('yr').textContent = new Date().getFullYear()
+
+    const pay = document.getElementById('payBtn')
+    const emailEl = document.getElementById('proEmail')
+
+    const FLW_LINK = 'https://flutterwave.com/pay/your-payment-link'  // replace with your Payment Link
+
+    function setEmail(e) {
+      const email = emailEl.value.trim().toLowerCase()
+      if (!email) { alert('Enter your email') ; e.preventDefault() ; return false }
+      localStorage.setItem('user_email', email)
+      fetch('/api/user-upsert', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ email }) }).catch(()=>{})
+      const redirect = encodeURIComponent('https://trendpeak.io/pro.html')
+      pay.href = FLW_LINK + '?customer.email=' + encodeURIComponent(email) + '&redirect_url=' + redirect
+    }
+
+    pay.addEventListener('click', setEmail)
+  </script>
 </body>
 </html>
