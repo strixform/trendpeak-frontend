@@ -37,6 +37,12 @@
         <a href="/contact.html">Contact</a>
       </nav>
       <p class="tag">See the rise. Understand the reason.</p>
+
+      <div id="trendTicker" class="ticker hide">
+        <span id="tickerLabel">Now trending:</span>
+        <span id="tickerItem"></span>
+      </div>
+
       <div id="upgradeBar" class="bar hide">
         <span id="upgradeMsg"></span>
         <a href="/pricing.html" class="button mini">Upgrade</a>
@@ -87,6 +93,7 @@
             <button id="pngBtn">Download PNG</button>
             <button id="ogBtn">Share image</button>
             <a id="sharePageBtn" href="#" target="_blank" rel="noopener">Share page</a>
+            <a id="embedBtn" href="#" target="_blank" rel="noopener">Embed</a>
           </div>
           <span id="freshness"></span>
           <span id="coverage"></span>
@@ -94,7 +101,6 @@
 
         <canvas id="chart" height="120"></canvas>
 
-        <!-- NEW: Insight summary -->
         <div id="aiWrap" class="card" style="margin-top:12px">
           <strong>Why it moved</strong>
           <div id="aiSummary" class="small" style="margin-top:6px">Loading insight...</div>
@@ -119,6 +125,11 @@
         <div id="sourcesWrap">
           <h3>Top sources</h3>
           <div id="sources" class="sources"></div>
+        </div>
+
+        <div id="embedCodeWrap" class="card" style="margin-top:12px; display:none">
+          <strong>Embed code</strong>
+          <pre id="embedCode" class="small" style="white-space:pre-wrap;word-break:break-all;margin-top:6px"></pre>
         </div>
       </section>
     </main>
@@ -145,8 +156,8 @@
 
   <div id="proModal" class="modal hide">
     <div class="box">
-      <h3>Pro feature</h3>
-      <p class="small">This feature is available for Pro users. Upgrade to access spike alerts, CSV downloads, and more.</p>
+      <h3>Pro feature</</h3>
+      <p class="small">Upgrade to access spike alerts, CSV downloads, and share images.</p>
       <div class="actions">
         <a href="/pricing.html" class="button">View plans</a>
         <button id="proClose" class="ghost">Close</button>
@@ -157,6 +168,6 @@
   <div id="toast" class="toast hide"></div>
 
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script defer src="/app.js?v=16"></script>
+  <script defer src="/app.js?v=17"></script>
 </body>
 </html>
