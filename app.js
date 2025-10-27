@@ -38,6 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const alertStatus = document.getElementById('alertStatus');
   const toast = document.getElementById('toast');
 
+  const aiSummaryEl = document.getElementById('aiSummary');
+
   const FORMSPREE_URL = 'https://formspree.io/f/your-form-id';
 
   if (yrEl) yrEl.textContent = new Date().getFullYear();
@@ -56,42 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
     try{ if(window.plausible) window.plausible(name, { props }); }catch{}
   }
 
-  function nowUtc(){
-    return new Date().toISOString();
-  }
-  function daysFromNow(n){
-    const d = new Date();
-    d.setDate(d.getDate() + n);
-    return d.toISOString();
-  }
-
-  function getProExpiry(){
-    try{ return localStorage.getItem('tp_pro_expiry') || ''; }catch{ return '' }
-  }
-  function isProActive(){
-    const exp = getProExpiry();
-    if (!exp) return false;
-    return new Date(exp).getTime() > Date.now();
-  }
-  function setPro(days){
-    try{
-      localStorage.setItem('tp_pro', '1');
-      localStorage.setItem('tp_pro_since', nowUtc());
-      localStorage.setItem('tp_pro_expiry', daysFromNow(days));
-    }catch{}
-  }
-  function clearPro(){
-    try{
-      localStorage.removeItem('tp_pro');
-      localStorage.removeItem('tp_pro_since');
-      localStorage.removeItem('tp_pro_expiry');
-    }catch{}
-  }
-
-  function isPro(){
-    return isProActive();
-  }
-
+  // Pro state helpers
+  function nowUtc(){ return new Date().toISOString(); }
+  function daysFromNow(n){ const d = new Date(); d.setDate(d.getDate()+n); return d.toISOString(); }
+  function getProExpiry(){ try{ return localStorage.getItem('tp_pro_expiry') || ''; }catch{ return '' } }
+  function isProActive(){ const exp = getProExpiry(); if(!exp) return false; return new Date(exp).getTime() > Date.now(); }
+  function isPro(){ return isProActive(); }
   function updateProUI(){
     const pro = isProActive();
     const exp = getProExpiry();
@@ -100,9 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
       else { proBadge.classList.add('hide'); }
     }
     if (upgradeBar && upgradeMsg){
-      if (!exp){
-        upgradeBar.classList.add('hide');
-      } else {
+      if (!exp){ upgradeBar.classList.add('hide'); }
+      else {
         const msLeft = new Date(exp).getTime() - Date.now();
         const daysLeft = Math.max(0, Math.ceil(msLeft / 86400000));
         if (!pro){
@@ -117,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
-
   function showProModal(){ if (proModal) proModal.classList.remove('hide'); }
   function hideProModal(){ if (proModal) proModal.classList.add('hide'); }
   if (proClose) proClose.addEventListener('click', hideProModal);
@@ -130,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   updateProUI();
-
   form.addEventListener('submit', onSearchSubmit);
 
   async function onSearchSubmit(e){
@@ -149,7 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (coverageEl) coverageEl.textContent = 'Region: ' + geo;
     if (spikesEl) spikesEl.innerHTML = 'Loading...';
     if (sourcesEl) sourcesEl.innerHTML = '';
+    if (aiSummaryEl) aiSummaryEl.textContent = 'Loading insight...';
 
+    // show or hide alert box based on Pro
     const alertWrap = document.getElementById('alertWrap');
     if (alertWrap) alertWrap.style.display = isPro() ? 'block' : 'none';
     const alert_q = document.getElementById('alert_q');
@@ -171,9 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (freshnessEl) freshnessEl.textContent = 'Updated just now';
       drawChart(lastTimeline);
 
+      // render sections after a tiny delay
       setTimeout(() => {
         renderSpikes(data.spikes || []);
         renderSources(sources, regions, explore);
+        renderInsight({ spikes: data.spikes || [], regions, sources, timeline: lastTimeline, q, geo });
       }, 50);
 
       updateURL(q, geo);
@@ -182,9 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
       renderHistory();
       updateProUI();
       track('search', { q, geo });
-      console.log('Search success', { q, geo });
     } catch (err) {
       if (spikesEl) spikesEl.innerHTML = 'Failed to load';
+      if (aiSummaryEl) aiSummaryEl.textContent = 'Not enough data yet.';
       console.error(err);
     }
   }
@@ -205,6 +178,54 @@ document.addEventListener('DOMContentLoaded', () => {
       data: { labels, datasets: [{ data: values, fill: false, tension: .2, pointRadius: 2 }] },
       options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { suggestedMax: 100, grid: { color: '#1a1a1a' } } } }
     });
+  }
+
+  // NEW: build a compact insight from spikes, regions, sources
+  function renderInsight({ spikes, regions, sources, timeline, q, geo }){
+    if (!aiSummaryEl) return;
+    if (!timeline || !timeline.length){
+      aiSummaryEl.textContent = 'Not enough data yet.';
+      return;
+    }
+    const latest = timeline[timeline.length - 1]?.v ?? 0;
+    const base = avg(timeline.slice(0, Math.max(1, timeline.length - 7)).map(p => p.v)); // baseline before last week
+    const chg = pct(base, latest);
+
+    const topSpike = Array.isArray(spikes) && spikes.length ? spikes.reduce((a,b)=> a.percent>=b.percent ? a : b) : null;
+    const topRegions = (regions || []).slice(0,3).map(r => r.name).filter(Boolean);
+    const hostCounts = countHosts([
+      ...(sources?.news || []),
+      ...(sources?.reddit || []),
+      ...(sources?.youtube || [])
+    ]);
+    const topHosts = hostCounts.slice(0,2).map(h => h.host);
+
+    // Build a short, factual line
+    const bits = [];
+    bits.push('Change ' + (chg >= 0 ? '+'+chg : chg) + '% vs baseline');
+    if (topSpike) bits.push('Peak ' + topSpike.time + ' +' + topSpike.percent + '%');
+    if (topRegions.length) bits.push('Top regions ' + topRegions.join(', '));
+    if (topHosts.length) bits.push('Sources ' + topHosts.join(', '));
+
+    aiSummaryEl.textContent = bits.join('. ') + '.';
+  }
+
+  function avg(arr){ if(!arr.length) return 0; return Math.round(arr.reduce((a,b)=>a+b,0)/arr.length); }
+  function pct(base, val){
+    if (base <= 0) return 0;
+    return Math.round(100*(val - base)/base);
+  }
+  function countHosts(items){
+    const map = new Map();
+    for (const it of items){
+      const host = hostFrom(it.url || it.site || '');
+      if (!host) continue;
+      map.set(host, (map.get(host)||0)+1);
+    }
+    return Array.from(map.entries()).map(([host,count])=>({host,count})).sort((a,b)=>b.count-a.count);
+  }
+  function hostFrom(link){
+    try{ return new URL(link).hostname.replace(/^www\./,''); }catch{ return ''; }
   }
 
   function renderSpikes(spikes){
@@ -286,9 +307,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = await fetch('/api/top?geo=' + encodeURIComponent(geo));
       const data = await r.json();
       renderTrending(data.top || []);
-      if (data.top && data.top.length) {
-  startTicker(data.top.map(t => t.title));
-}
+      if (data.top && data.top.length){
+        startTicker(data.top.map(t => t.title));
+      }
     } catch {
       box.innerHTML = 'Failed to load';
     }
@@ -316,6 +337,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function startTicker(list){
+    // optional ticker if you already added it earlier
+    const wrap = document.getElementById('trendTicker');
+    const item = document.getElementById('tickerItem');
+    if (!wrap || !item) return;
+    if (!list.length){ wrap.classList.add('hide'); return; }
+    wrap.classList.remove('hide');
+    let idx = 0;
+    function showNext(){
+      item.textContent = list[idx];
+      idx = (idx + 1) % list.length;
+    }
+    showNext();
+    setInterval(showNext, 5000);
+  }
+
   function updateURL(q, geo){
     const params = new URLSearchParams(location.search);
     params.set('q', q);
@@ -334,7 +371,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (pngBtn) pngBtn.onclick = downloadPNG;
-
     if (csvBtn) csvBtn.onclick = () => { isPro() ? downloadCSV() : showProModal(); };
     if (ogBtn) ogBtn.onclick = () => { isPro() ? openShareImage() : showProModal(); };
 
@@ -387,6 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.open(u, '_blank', 'noopener');
   }
 
+  // Alerts submit
   if (alertForm){
     alertForm.addEventListener('submit', async e => {
       e.preventDefault();
@@ -397,11 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try{
         if (alertBtn){ alertBtn.disabled = true; alertBtn.textContent = 'Submitting...'; }
         if (alertStatus) alertStatus.textContent = 'Submitting...';
-        const r = await fetch(FORMSPREE_URL, {
-          method: 'POST',
-          headers: { 'Accept': 'application/json' },
-          body: fd
-        });
+        const r = await fetch(FORMSPREE_URL, { method:'POST', headers:{'Accept':'application/json'}, body: fd });
         if (!r.ok) throw new Error('Submit failed');
         if (alertStatus) alertStatus.textContent = 'Subscribed. Check your email for confirmation.';
         showToast('Alert subscribed');
@@ -415,131 +448,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function initFromURL(){
-    const params = new URLSearchParams(location.search);
-    const q = params.get('q');
-    const geo = params.get('geo');
-    const geoSel = document.getElementById('geo');
-    if (geo && geoSel) geoSel.value = geo.toUpperCase();
-    if (q){
-      qEl.value = q;
-      form.dispatchEvent(new Event('submit'));
-    } else {
-      loadTrending();
-    }
-  }
-
-  function getSaved(){ try{ return JSON.parse(localStorage.getItem('tp_saved') || '[]'); }catch{return[]} }
-  function setSaved(list){ localStorage.setItem('tp_saved', JSON.stringify(list.slice(0,30))); }
-  function renderSaved(){
-    if(!savedBox) return;
-    const list = getSaved();
-    if(!list.length){ savedBox.innerHTML = ''; return; }
-    savedBox.innerHTML = '';
-    list.forEach(({q,geo}, idx) => {
-      const chip = document.createElement('div');
-      chip.className = 'chip';
-      chip.innerHTML = '<span>' + escapeHtml(q) + ' · ' + geo + '</span><button class="x" title="Remove">×</button>';
-      chip.addEventListener('click', e => {
-        if(e.target.classList.contains('x')) return;
-        qEl.value = q;
-        const gs = document.getElementById('geo');
-        if(gs) gs.value = geo;
-        form.dispatchEvent(new Event('submit'));
-        window.scrollTo({top:0,behavior:'smooth'});
-      });
-      chip.querySelector('.x').addEventListener('click', e => {
-        e.stopPropagation();
-        const l = getSaved();
-        l.splice(idx,1);
-        setSaved(l);
-        renderSaved();
-      });
-      savedBox.appendChild(chip);
-    });
-  }
-  function saveCurrent(){
-    const q = qEl.value.trim();
-    const gs = document.getElementById('geo');
-    const geo = gs ? gs.value : 'NG';
-    if(!q) return;
-    const list = getSaved();
-    const exists = list.find(x => x.q.toLowerCase() === q.toLowerCase() && x.geo === geo);
-    if(!exists){
-      list.unshift({q,geo});
-      setSaved(list);
-      renderSaved();
-      track('save_search', { q, geo });
-    }
-  }
-  if (saveBtn) saveBtn.addEventListener('click', saveCurrent);
-  renderSaved();
-
-  function getHistory(){ try{ return JSON.parse(localStorage.getItem('tp_recent') || '[]'); }catch{return[]} }
-  function setHistory(list){ localStorage.setItem('tp_recent', JSON.stringify(list.slice(0,15))); }
-  function pushHistory(item){
-    const list = getHistory().filter(x => !(x.q.toLowerCase() === item.q.toLowerCase() && x.geo === item.geo));
-    list.unshift(item);
-    setHistory(list);
-  }
-  function renderHistory(){
-    if(!recentBox) return;
-    const list = getHistory();
-    recentBox.innerHTML = '';
-    list.forEach(({q,geo}) => {
-      const chip = document.createElement('div');
-      chip.className = 'chip';
-      chip.textContent = q + ' · ' + geo;
-      chip.addEventListener('click', () => {
-        qEl.value = q;
-        const gs = document.getElementById('geo');
-        if(gs) gs.value = geo;
-        form.dispatchEvent(new Event('submit'));
-        window.scrollTo({top:0,behavior:'smooth'});
-      });
-      recentBox.appendChild(chip);
-    });
-  }
-  if (clearRecent) clearRecent.addEventListener('click', () => { setHistory([]); renderHistory(); });
-
-  const welcome = document.getElementById('welcome');
-  const welcomeOk = document.getElementById('welcomeOk');
-  const welcomeHide = document.getElementById('welcomeHide');
-  function showWelcomeOnce(){
-    const seen = localStorage.getItem('tp_seen');
-    if (seen || !welcome) return;
-    welcome.classList.remove('hide');
-  }
-  function hideWelcome(){
-    if (!welcome) return;
-    welcome.classList.add('hide');
-    localStorage.setItem('tp_seen','1');
-  }
-  if (welcomeOk) welcomeOk.addEventListener('click', hideWelcome);
-  if (welcomeHide) welcomeHide.addEventListener('click', hideWelcome);
-
   initFromURL();
   const gs = document.getElementById('geo');
   if (gs) gs.addEventListener('change', loadTrending);
   renderHistory();
   showWelcomeOnce();
 
-  window.tpSetPro = days => { setPro(days || 30); updateProUI(); };
-  window.tpClearPro = () => { clearPro(); updateProUI(); };
-function startTicker(list){
-  const wrap = document.getElementById('trendTicker');
-  const item = document.getElementById('tickerItem');
-  if (!wrap || !item) return;
-  if (!list.length){ wrap.classList.add('hide'); return; }
-  wrap.classList.remove('hide');
-  let idx = 0;
-  function showNext(){
-    item.textContent = list[idx];
-    idx = (idx + 1) % list.length;
+  function showWelcomeOnce(){
+    const seen = localStorage.getItem('tp_seen');
+    if (seen) return;
+    const w = document.getElementById('welcome');
+    if (!w) return;
+    w.classList.remove('hide');
   }
-  showNext();
-  setInterval(showNext, 5000);
-}
+
+  // quick helpers for testing in console
+  window.tpSetPro = days => { 
+    try{
+      localStorage.setItem('tp_pro','1');
+      localStorage.setItem('tp_pro_since', nowUtc());
+      localStorage.setItem('tp_pro_expiry', daysFromNow(days || 30));
+    }catch{}
+    updateProUI();
+  };
+  window.tpClearPro = () => { 
+    try{
+      localStorage.removeItem('tp_pro');
+      localStorage.removeItem('tp_pro_since');
+      localStorage.removeItem('tp_pro_expiry');
+    }catch{}
+    updateProUI();
+  };
 
   console.log('TrendPeak app ready');
 });
