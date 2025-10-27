@@ -6,15 +6,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
-  <meta property="og:title" content="TrendPeak">
-<meta property="og:description" content="Search any topic. See the rise, spikes, regions, and sources.">
-<meta property="og:url" content="https://trendpeak.io/">
-<meta property="og:type" content="website">
-<meta property="og:image" content="https://trendpeak.io/favicon.svg">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="TrendPeak">
-<meta name="twitter:description" content="Search any topic. See the rise, spikes, regions, and sources.">
-<meta name="twitter:image" content="https://trendpeak.io/favicon.svg">
 </head>
 <body>
   <div class="wrap">
@@ -22,21 +13,25 @@
       <div class="brand"><div class="logo"></div><h1>TrendPeak</h1></div>
       <nav class="nav">
         <a href="/index.html">Home</a>
+        <a href="/top.html">Top rising</a>
         <a href="/pricing.html">Pricing</a>
         <a href="/about.html">About</a>
         <a href="/contact.html">Contact</a>
       </nav>
-      <p class="tag">We reply within 24 hours</p>
+      <p class="tag">Say hello.</p>
     </header>
 
     <main>
-      <form action="https://formspree.io/f/mnngraqk" method="POST" class="card" style="display:grid;gap:10px;max-width:520px">
-        <input type="text" name="name" placeholder="Your name" required>
-        <input type="email" name="email" placeholder="Your email" required>
-        <textarea name="message" rows="5" placeholder="Your message" style="padding:12px 14px;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text)" required></textarea>
-        <button type="submit" style="width:max-content;padding:10px 14px;background:var(--accent2);color:#fff;border:0;border-radius:10px;cursor:pointer">Send</button>
-      </form>
-      <div class="small" style="margin-top:8px">Replace the form action URL with your Formspree form ID.</div>
+      <section class="card">
+        <strong>Message us</strong>
+        <form action="https://formspree.io/f/your-form-id" method="POST" style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+          <input type="text" name="name" placeholder="Your name" required>
+          <input type="email" name="email" placeholder="you@email.com" required>
+          <textarea name="message" placeholder="Your message" rows="5" required></textarea>
+          <button type="submit">Send</button>
+        </form>
+        <div class="small muted" style="margin-top:6px">We reply within 24 hours.</div>
+      </section>
     </main>
 
     <footer>
@@ -47,6 +42,6 @@
       </div>
     </footer>
   </div>
-  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear()</script>
 </body>
 </html>
