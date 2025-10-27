@@ -37,10 +37,6 @@
         <a href="/contact.html">Contact</a>
       </nav>
       <p class="tag">See the rise. Understand the reason.</p>
-      <div id="trendTicker" class="ticker hide">
-  <span id="tickerLabel">Now trending:</span>
-  <span id="tickerItem"></span>
-</div>
       <div id="upgradeBar" class="bar hide">
         <span id="upgradeMsg"></span>
         <a href="/pricing.html" class="button mini">Upgrade</a>
@@ -97,6 +93,12 @@
         </div>
 
         <canvas id="chart" height="120"></canvas>
+
+        <!-- NEW: Insight summary -->
+        <div id="aiWrap" class="card" style="margin-top:12px">
+          <strong>Why it moved</strong>
+          <div id="aiSummary" class="small" style="margin-top:6px">Loading insight...</div>
+        </div>
 
         <div id="alertWrap" class="card" style="margin-top:12px">
           <strong>Get spike alerts by email</strong>
@@ -155,6 +157,6 @@
   <div id="toast" class="toast hide"></div>
 
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script defer src="/app.js?v=15"></script>
+  <script defer src="/app.js?v=16"></script>
 </body>
 </html>
