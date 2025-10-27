@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const shareTT = document.getElementById('shareTT');
   const shareYT = document.getElementById('shareYT');
   const sharePageBtn = document.getElementById('sharePageBtn');
+  const embedBtn = document.getElementById('embedBtn');
 
   const saveBtn = document.getElementById('saveBtn');
   const savedBox = document.getElementById('saved');
@@ -40,14 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const aiSummaryEl = document.getElementById('aiSummary');
 
-  const FORMSPREE_URL = 'https://formspree.io/f/your-form-id';
+  const FORMSPREE_URL = 'https://formspree.io/f/your-form-id'; // replace
 
   if (yrEl) yrEl.textContent = new Date().getFullYear();
-
-  if (!form || !qEl || !resEl) {
-    console.error('Missing DOM nodes. Check IDs in index.html');
-    return;
-  }
+  if (!form || !qEl || !resEl) return;
 
   let chart;
   let lastTimeline = [];
@@ -58,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try{ if(window.plausible) window.plausible(name, { props }); }catch{}
   }
 
-  // Pro state helpers
   function nowUtc(){ return new Date().toISOString(); }
   function daysFromNow(n){ const d = new Date(); d.setDate(d.getDate()+n); return d.toISOString(); }
   function getProExpiry(){ try{ return localStorage.getItem('tp_pro_expiry') || ''; }catch{ return '' } }
@@ -120,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sourcesEl) sourcesEl.innerHTML = '';
     if (aiSummaryEl) aiSummaryEl.textContent = 'Loading insight...';
 
-    // show or hide alert box based on Pro
     const alertWrap = document.getElementById('alertWrap');
     if (alertWrap) alertWrap.style.display = isPro() ? 'block' : 'none';
     const alert_q = document.getElementById('alert_q');
@@ -142,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (freshnessEl) freshnessEl.textContent = 'Updated just now';
       drawChart(lastTimeline);
 
-      // render sections after a tiny delay
       setTimeout(() => {
         renderSpikes(data.spikes || []);
         renderSources(sources, regions, explore);
@@ -169,10 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const labels = points.map(p => p.t.slice(5));
     const values = points.map(p => p.v);
     if (chart) chart.destroy();
-    if (typeof Chart === 'undefined') {
-      console.error('Chart.js not loaded');
-      return;
-    }
+    if (typeof Chart === 'undefined') return;
     chart = new Chart(ctx, {
       type: 'line',
       data: { labels, datasets: [{ data: values, fill: false, tension: .2, pointRadius: 2 }] },
@@ -180,17 +171,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // NEW: build a compact insight from spikes, regions, sources
-  function renderInsight({ spikes, regions, sources, timeline, q, geo }){
+  function renderInsight({ spikes, regions, sources, timeline }){
     if (!aiSummaryEl) return;
     if (!timeline || !timeline.length){
       aiSummaryEl.textContent = 'Not enough data yet.';
       return;
     }
     const latest = timeline[timeline.length - 1]?.v ?? 0;
-    const base = avg(timeline.slice(0, Math.max(1, timeline.length - 7)).map(p => p.v)); // baseline before last week
+    const base = avg(timeline.slice(0, Math.max(1, timeline.length - 7)).map(p => p.v));
     const chg = pct(base, latest);
-
     const topSpike = Array.isArray(spikes) && spikes.length ? spikes.reduce((a,b)=> a.percent>=b.percent ? a : b) : null;
     const topRegions = (regions || []).slice(0,3).map(r => r.name).filter(Boolean);
     const hostCounts = countHosts([
@@ -199,22 +188,15 @@ document.addEventListener('DOMContentLoaded', () => {
       ...(sources?.youtube || [])
     ]);
     const topHosts = hostCounts.slice(0,2).map(h => h.host);
-
-    // Build a short, factual line
     const bits = [];
     bits.push('Change ' + (chg >= 0 ? '+'+chg : chg) + '% vs baseline');
     if (topSpike) bits.push('Peak ' + topSpike.time + ' +' + topSpike.percent + '%');
     if (topRegions.length) bits.push('Top regions ' + topRegions.join(', '));
     if (topHosts.length) bits.push('Sources ' + topHosts.join(', '));
-
     aiSummaryEl.textContent = bits.join('. ') + '.';
   }
-
   function avg(arr){ if(!arr.length) return 0; return Math.round(arr.reduce((a,b)=>a+b,0)/arr.length); }
-  function pct(base, val){
-    if (base <= 0) return 0;
-    return Math.round(100*(val - base)/base);
-  }
+  function pct(base, val){ if (base <= 0) return 0; return Math.round(100*(val - base)/base); }
   function countHosts(items){
     const map = new Map();
     for (const it of items){
@@ -224,9 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     return Array.from(map.entries()).map(([host,count])=>({host,count})).sort((a,b)=>b.count-a.count);
   }
-  function hostFrom(link){
-    try{ return new URL(link).hostname.replace(/^www\./,''); }catch{ return ''; }
-  }
+  function hostFrom(link){ try{ return new URL(link).hostname.replace(/^www\./,''); }catch{ return ''; } }
 
   function renderSpikes(spikes){
     if (!spikesEl) return;
@@ -243,25 +223,21 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderSources(sources, regions, explore){
     if (!sourcesEl) return;
     sourcesEl.innerHTML = '';
-
     if (Array.isArray(regions) && regions.length){
       const box = document.createElement('div');
       box.className = 'card';
       box.innerHTML = '<strong>Top regions</strong><div class="small">' + regions.map(r => escapeHtml(r.name) + ' ' + r.value).join(' • ') + '</div>';
       sourcesEl.appendChild(box);
     }
-
     section('News', sources.news || [], i => row(i.site, i.title, i.url));
     section('Reddit', sources.reddit || [], i => row(i.site, i.score ? i.title + ' • ' + i.score : i.title, i.url));
     section('YouTube', sources.youtube || [], i => videoRow(i));
-
     if (explore && explore.length){
       const hdr = document.createElement('div');
       hdr.className = 'small';
       hdr.style.marginTop = '10px';
       hdr.textContent = 'Quick explore';
       sourcesEl.appendChild(hdr);
-
       const wrap = document.createElement('div');
       wrap.className = 'card';
       wrap.innerHTML = explore.map(e => '<a href="' + e.url + '" target="_blank" rel="noopener" style="margin-right:12px">' + escapeHtml(e.label) + '</a>').join('');
@@ -278,24 +254,19 @@ document.addEventListener('DOMContentLoaded', () => {
     sourcesEl.appendChild(hdr);
     list.forEach(x => sourcesEl.appendChild(renderFn(x)));
   }
-
   function row(site, title, url){
     const div = document.createElement('div');
     div.className = 'source';
     div.innerHTML = '<a href="' + url + '" target="_blank" rel="noopener">' + escapeHtml(site || '') + ' • ' + escapeHtml(title || '') + '</a>';
     return div;
   }
-
   function videoRow(item){
     const div = document.createElement('div');
     div.className = 'source';
     div.innerHTML = '<a href="' + item.url + '" target="_blank" rel="noopener">' + (item.thumbnail ? '<img src="' + item.thumbnail + '" alt="" style="width:72px;height:40px;object-fit:cover;border-radius:6px;margin-right:8px;vertical-align:middle">' : '') + escapeHtml(item.title || '') + '</a>';
     return div;
   }
-
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
   async function loadTrending() {
     const geoSel = document.getElementById('geo');
@@ -314,7 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
       box.innerHTML = 'Failed to load';
     }
   }
-
   function renderTrending(list){
     const box = document.getElementById('trending');
     if (!box) return;
@@ -336,19 +306,14 @@ document.addEventListener('DOMContentLoaded', () => {
       box.appendChild(div);
     });
   }
-
   function startTicker(list){
-    // optional ticker if you already added it earlier
     const wrap = document.getElementById('trendTicker');
     const item = document.getElementById('tickerItem');
     if (!wrap || !item) return;
     if (!list.length){ wrap.classList.add('hide'); return; }
     wrap.classList.remove('hide');
     let idx = 0;
-    function showNext(){
-      item.textContent = list[idx];
-      idx = (idx + 1) % list.length;
-    }
+    function showNext(){ item.textContent = list[idx]; idx = (idx + 1) % list.length; }
     showNext();
     setInterval(showNext, 5000);
   }
@@ -363,25 +328,29 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateShareLinks(q, geo){
     const url = location.origin + location.pathname + '?q=' + encodeURIComponent(q) + '&geo=' + encodeURIComponent(geo);
     if (copyLinkBtn) copyLinkBtn.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(url);
-        copyLinkBtn.textContent = 'Copied';
-        setTimeout(() => copyLinkBtn.textContent = 'Copy link', 1500);
-      } catch {}
+      try { await navigator.clipboard.writeText(url); copyLinkBtn.textContent = 'Copied'; setTimeout(() => copyLinkBtn.textContent = 'Copy link', 1500); } catch {}
     };
-
     if (pngBtn) pngBtn.onclick = downloadPNG;
     if (csvBtn) csvBtn.onclick = () => { isPro() ? downloadCSV() : showProModal(); };
     if (ogBtn) ogBtn.onclick = () => { isPro() ? openShareImage() : showProModal(); };
-
     if (shareX) shareX.href = 'https://x.com/intent/tweet?text=' + encodeURIComponent(q) + '&url=' + encodeURIComponent(url);
     if (shareTT) shareTT.href = 'https://www.tiktok.com/share?url=' + encodeURIComponent(url) + '&title=' + encodeURIComponent(q);
     if (shareYT) shareYT.href = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
-
     if (sharePageBtn) {
       const labels = lastTimeline.map(p => p.t.slice(5)).join(',');
       const values = lastTimeline.map(p => p.v).join(',');
       sharePageBtn.href = '/share.html?q=' + encodeURIComponent(q) + '&geo=' + encodeURIComponent(geo) + '&labels=' + encodeURIComponent(labels) + '&values=' + encodeURIComponent(values);
+    }
+    if (embedBtn){
+      const labels = lastTimeline.map(p => p.t.slice(5)).join(',');
+      const values = lastTimeline.map(p => p.v).join(',');
+      embedBtn.href = '/embed.html?q=' + encodeURIComponent(q) + '&geo=' + encodeURIComponent(geo) + '&labels=' + encodeURIComponent(labels) + '&values=' + encodeURIComponent(values);
+      const embedCodeWrap = document.getElementById('embedCodeWrap');
+      const embedCode = document.getElementById('embedCode');
+      if (embedCodeWrap && embedCode){
+        embedCodeWrap.style.display = lastTimeline.length ? 'block' : 'none';
+        embedCode.textContent = '<iframe src="' + location.origin + embedBtn.getAttribute('href') + '" style="width:100%;max-width:600px;height:260px;border:0;border-radius:10px;overflow:hidden"></iframe>';
+      }
     }
   }
 
@@ -398,7 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
     a.remove();
     track('csv_download', { q: lastQuery, geo: lastGeo });
   }
-
   function downloadPNG(){
     const canvas = document.getElementById('chart');
     if (!canvas) return;
@@ -411,7 +379,6 @@ document.addEventListener('DOMContentLoaded', () => {
     a.remove();
     track('png_download', { q: lastQuery, geo: lastGeo });
   }
-
   function openShareImage(){
     if (!lastTimeline.length) return;
     const m = document.querySelector('meta[name="tp-backend"]');
@@ -423,7 +390,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.open(u, '_blank', 'noopener');
   }
 
-  // Alerts submit
   if (alertForm){
     alertForm.addEventListener('submit', async e => {
       e.preventDefault();
@@ -448,11 +414,92 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  initFromURL();
-  const gs = document.getElementById('geo');
-  if (gs) gs.addEventListener('change', loadTrending);
-  renderHistory();
-  showWelcomeOnce();
+  function initFromURL(){
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q');
+    const geo = params.get('geo');
+    const geoSel = document.getElementById('geo');
+    if (geo && geoSel) geoSel.value = geo.toUpperCase();
+    if (q){
+      qEl.value = q;
+      form.dispatchEvent(new Event('submit'));
+    } else {
+      loadTrending();
+    }
+  }
+
+  function getSaved(){ try{ return JSON.parse(localStorage.getItem('tp_saved') || '[]'); }catch{return[]} }
+  function setSaved(list){ localStorage.setItem('tp_saved', JSON.stringify(list.slice(0,30))); }
+  function renderSaved(){
+    if(!savedBox) return;
+    const list = getSaved();
+    if(!list.length){ savedBox.innerHTML = ''; return; }
+    savedBox.innerHTML = '';
+    list.forEach(({q,geo}, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.innerHTML = '<span>' + escapeHtml(q) + ' · ' + geo + '</span><button class="x" title="Remove">×</button>';
+      chip.addEventListener('click', e => {
+        if(e.target.classList.contains('x')) return;
+        qEl.value = q;
+        const gs = document.getElementById('geo');
+        if(gs) gs.value = geo;
+        form.dispatchEvent(new Event('submit'));
+        window.scrollTo({top:0,behavior:'smooth'});
+      });
+      chip.querySelector('.x').addEventListener('click', e => {
+        e.stopPropagation();
+        const l = getSaved();
+        l.splice(idx,1);
+        setSaved(l);
+        renderSaved();
+      });
+      savedBox.appendChild(chip);
+    });
+  }
+  function saveCurrent(){
+    const q = qEl.value.trim();
+    const gs = document.getElementById('geo');
+    const geo = gs ? gs.value : 'NG';
+    if(!q) return;
+    const list = getSaved();
+    const exists = list.find(x => x.q.toLowerCase() === q.toLowerCase() && x.geo === geo);
+    if(!exists){
+      list.unshift({q,geo});
+      setSaved(list);
+      renderSaved();
+      track('save_search', { q, geo });
+    }
+  }
+  if (saveBtn) saveBtn.addEventListener('click', saveCurrent);
+  renderSaved();
+
+  function getHistory(){ try{ return JSON.parse(localStorage.getItem('tp_recent') || '[]'); }catch{return[]} }
+  function setHistory(list){ localStorage.setItem('tp_recent', JSON.stringify(list.slice(0,15))); }
+  function pushHistory(item){
+    const list = getHistory().filter(x => !(x.q.toLowerCase() === item.q.toLowerCase() && x.geo === item.geo));
+    list.unshift(item);
+    setHistory(list);
+  }
+  function renderHistory(){
+    if(!recentBox) return;
+    const list = getHistory();
+    recentBox.innerHTML = '';
+    list.forEach(({q,geo}) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = q + ' · ' + geo;
+      chip.addEventListener('click', () => {
+        qEl.value = q;
+        const gs = document.getElementById('geo');
+        if(gs) gs.value = geo;
+        form.dispatchEvent(new Event('submit'));
+        window.scrollTo({top:0,behavior:'smooth'});
+      });
+      recentBox.appendChild(chip);
+    });
+  }
+  if (clearRecent) clearRecent.addEventListener('click', () => { setHistory([]); renderHistory(); });
 
   function showWelcomeOnce(){
     const seen = localStorage.getItem('tp_seen');
@@ -462,7 +509,12 @@ document.addEventListener('DOMContentLoaded', () => {
     w.classList.remove('hide');
   }
 
-  // quick helpers for testing in console
+  initFromURL();
+  const gs = document.getElementById('geo');
+  if (gs) gs.addEventListener('change', loadTrending);
+  renderHistory();
+  showWelcomeOnce();
+
   window.tpSetPro = days => { 
     try{
       localStorage.setItem('tp_pro','1');
