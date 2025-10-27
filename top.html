@@ -7,7 +7,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
   <meta property="og:title" content="Top Rising • TrendPeak">
-  <meta property="og:description" content="Live list of trending topics around the world.">
+  <meta property="og:description" content="Live list of trending topics.">
   <meta property="og:url" content="https://trendpeak.io/top.html">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://trendpeak.io/favicon.svg">
@@ -65,7 +65,7 @@
       const list = document.getElementById('topList');
       list.innerHTML = 'Loading...';
       try {
-        const r = await fetch(`/api/top?geo=${encodeURIComponent(geo)}`);
+        const r = await fetch('/api/top?geo=' + encodeURIComponent(geo));
         if (!r.ok) throw new Error('API error');
         const data = await r.json();
         renderTop(data.top || []);
@@ -86,15 +86,11 @@
       items.forEach(i => {
         const div = document.createElement('div');
         div.className = 'card';
-        const related = i.related?.length ? `<div class="small">${i.related.join(' • ')}</div>` : '';
-        const article = i.articles?.length ? `<div class="small"><a href="${i.articles[0].url}" target="_blank" rel="noopener">Read more</a></div>` : '';
-        div.innerHTML = `
-          <strong>${i.title}</strong>
-          ${related}
-          ${article}
-        `;
+        const related = i.related?.length ? '<div class="small">' + i.related.join(' • ') + '</div>' : '';
+        const article = i.articles?.length ? '<div class="small"><a href="' + i.articles[0].url + '" target="_blank" rel="noopener">Read more</a></div>' : '';
+        div.innerHTML = '<strong>' + i.title + '</strong>' + related + article;
         div.addEventListener('click', () => {
-          window.location.href = \`/index.html?q=\${encodeURIComponent(i.title)}&geo=\${encodeURIComponent(document.getElementById('geo').value)}\`;
+          window.location.href = '/index.html?q=' + encodeURIComponent(i.title) + '&geo=' + encodeURIComponent(document.getElementById('geo').value);
         });
         list.appendChild(div);
       });
