@@ -2,6 +2,23 @@ console.log('TrendPeak app loading');
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM ready');
+  const userEmail = localStorage.getItem('user_email') || ''
+if (userEmail) {
+  fetch('/api/pro?email=' + encodeURIComponent(userEmail))
+    .then(r => r.json())
+    .then(d => {
+      if (d.active) {
+        localStorage.setItem('tp_pro', '1')
+        localStorage.setItem('tp_pro_expiry', d.expires_at || '')
+      } else {
+        localStorage.removeItem('tp_pro')
+        localStorage.removeItem('tp_pro_expiry')
+      }
+      if (typeof updateProUI === 'function') updateProUI()
+    })
+    .catch(()=>{})
+}
+
 
   const form = document.getElementById('searchForm');
   const qEl = document.getElementById('q');
